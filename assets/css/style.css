@@ -1,188 +1,132 @@
 /* ==========================================================================
-   [1] لوحة الألوان الرئيسية لـ (نظام راسخ)
-   - الوظيفة: التحكم في ألوان النظام بالكامل من مكان واحد.
-   - طريقة التعديل مستقبلاً: غيّر رمز اللون (مثل #0b1f3f) وسيتغير في كل الصفحات تلقائياً.
+   [1] لوحة الألوان الرسمية لـ (نظام راسخ)
+   الكحلي الملكي (أساسي) + الأخضر الزمردي (ثانوي) + الذهبي الملكي (تمييز)
    ========================================================================== */
 :root {
-    --primary-navy: #0b1f3f;   /* اللون الأساسي: أزرق كحلي */
-    --navy-hover: #132d5e;     /* لون الأزرق الكحلي عند تمرير الماوس أو الضغط */
-    --accent-gold: #d4af37;    /* اللون الثانوي: أصفر ذهبي هادئ */
-    --bg-main: #f4f6f9;        /* لون خلفية الصفحة بالكامل */
-    --card-bg: #ffffff;        /* لون خلفية البطاقة (المربع الأبيض) */
-    --text-color: #333333;     /* لون النصوص الأساسية */
-    --text-muted: #6c757d;     /* لون النصوص الفرعية والهادئة */
-    --border-color: #ced4da;   /* لون حدود خانات الإدخال */
+    --primary-navy: #0B1F3F;
+    --navy-light: #163669;
+    --secondary-emerald: #1E6F5C;
+    --emerald-soft: #E8F5F1;
+    --accent-gold: #C59B27;
+    --gold-soft: #FDF8EA;
+    --bg-main: #F4F6F9;
+    --card-bg: #FFFFFF;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --border-color: #E2E8F0;
+    --radius-lg: 22px;
+    --radius-md: 14px;
 }
 
-
-/* ==========================================================================
-   [2] الإعدادات العامة للصفحة والخطوط
-   - الوظيفة: ضبط اتجاه الصفحة (من اليمين لليسار) وتوسيط المحتوى في الشاشة.
-   - طريقة التعديل مستقبلاً: لتغيير نوع الخط، عدّل اسم الخط في سطر (font-family).
-   ========================================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
-body {
+body.auth-body {
     background-color: var(--bg-main);
-    color: var(--text-color);
+    color: var(--text-main);
     direction: rtl;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ==========================================================================
+   [2] الترويسة العلوية المقوسة بزخارف المساجد والشعار الدائري
+   ========================================================================== */
+.rasikh-hero-header {
+    position: relative;
+    background: linear-gradient(145deg, var(--primary-navy) 0%, var(--navy-light) 65%, var(--secondary-emerald) 100%);
+    padding: 2.2rem 1.25rem 4.2rem;
+    text-align: center;
+    color: #FFFFFF;
+    border-bottom-left-radius: 32px;
+    border-bottom-right-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(11, 31, 63, 0.18);
+}
+
+.mosque-silhouette-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 180' fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M0 180V135h40v-35l12-18 12 18v35h56v-22c0-25 22-45 48-45s48 20 48 45v22h64v-48l15-24 15 24v48h50v-30c0-38 35-68 78-68s78 30 78 68v30h50v-48l15-24 15 24v48h64v-22c0-25 22-45 48-45s48 20 48 45v22h56v-35l12-18 12 18v35h40v45H0z'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: bottom center;
+    background-size: 620px auto;
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.logo-ring {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 0.85rem;
+    border-radius: 50%;
+    padding: 4px;
+    background: linear-gradient(135deg, var(--accent-gold), #F3D98B, var(--accent-gold));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.rasikh-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    background-color: var(--primary-navy);
+}
+
+.hero-content h1 {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin-bottom: 0.2rem;
+}
+
+.hero-content p {
+    font-size: 0.88rem;
+    color: #F3D98B;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   [3] بطاقة الدخول العائمة وعناصر الإدخال
+   ========================================================================== */
+.auth-main-wrapper {
+    flex: 1;
+    padding: 0 1rem 2rem;
+    margin-top: -2.4rem;
+    position: relative;
+    z-index: 5;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 1rem;
+    align-items: flex-start;
 }
 
-
-/* ==========================================================================
-   [3] تصميم بطاقة الدخول الرئيسية
-   - الوظيفة: تنسيق المربع الأبيض الذي يحتوي على نموذج الدخول.
-   - طريقة التعديل مستقبلاً:
-     * لتكبير أو تصغير عرض البطاقة: عدّل رقم (max-width: 450px).
-     * لتغيير سُمك الخط الذهبي العلوي: عدّل رقم (4px) في (border-top).
-   ========================================================================== */
-.rasikh-container {
+.rasikh-auth-card {
     background: var(--card-bg);
-    padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(11, 31, 63, 0.08);
     width: 100%;
-    max-width: 450px;
-    border-top: 4px solid var(--accent-gold);
+    max-width: 440px;
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.4rem;
+    box-shadow: 0 10px 30px rgba(11, 31, 63, 0.08);
+    border: 1px solid rgba(197, 155, 39, 0.25);
 }
 
-
-/* ==========================================================================
-   [4] تنسيق العنوان الرئيسي والوصف في أعلى البطاقة
-   - طريقة التعديل مستقبلاً: عدّل (font-size) لتكبير أو تصغير حجم العنوان.
-   ========================================================================== */
-.header-section {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.header-section h1 {
-    color: var(--primary-navy);
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
-}
-
-.header-section p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-
-/* ==========================================================================
-   [5] تنسيق خانات الإدخال (البريد الإلكتروني ورقم الجوال)
-   - طريقة التعديل مستقبلاً: لتكبير المسافة بين الخانات، عدّل (margin-bottom: 1.25rem).
-   ========================================================================== */
-.form-group {
-    margin-bottom: 1.25rem;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--primary-navy);
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.form-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--primary-navy);
-}
-
-
-/* ==========================================================================
-   [6] تنسيق الأزرار (زر إرسال التحقق + زر إرسال دعوة)
-   - الوظيفة: (btn-primary) للزر الكحلي الأساسي، و(btn-secondary) للزر المفرغ.
-   ========================================================================== */
-.btn-primary {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: var(--primary-navy);
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 0.75rem;
-    transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-    background-color: var(--navy-hover);
-}
-
-.btn-secondary {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: transparent;
-    color: var(--primary-navy);
-    border: 1px solid var(--primary-navy);
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.btn-secondary:hover {
-    background-color: rgba(11, 31, 63, 0.05);
-}
-
-
-/* ==========================================================================
-   [7] تنسيق رابط استرجاع النسخة الاحتياطية (أسفل الصفحة)
-   - طريقة التعديل مستقبلاً: لتكبير أو تصغير خط الرابط، عدّل (font-size: 0.75rem).
-   ========================================================================== */
-.footer-actions {
-    margin-top: 2rem;
-    text-align: center;
-    border-top: 1px solid #eeeeee;
-    padding-top: 1rem;
-}
-
-.backup-link {
-    font-size: 0.75rem; /* خط صغير وهادئ */
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.backup-link:hover {
-    color: var(--accent-gold);
-    text-decoration: underline;
-}
-/* ==========================================================================
-   [8] تنسيق أزرار التبديل (تسجيل دخول / مستخدم جديد)
-   - الوظيفة: تحويل الأزرار العلوية إلى شريط تبويب أنيق ومتناسق.
-   - طريقة التعديل مستقبلاً: لتغيير لون التبويب النشط، عدّل (var(--primary-navy)).
-   ========================================================================== */
 .auth-tabs {
     display: flex;
     background-color: var(--bg-main);
-    padding: 4px;
-    border-radius: 10px;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--border-color);
+    padding: 5px;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.35rem;
 }
 
 .tab-btn {
@@ -191,103 +135,171 @@ body {
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-size: 0.95rem;
-    font-weight: 600;
-    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
 }
 
 .tab-btn.active {
     background-color: var(--primary-navy);
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(11, 31, 63, 0.15);
+    color: #FFFFFF;
+    box-shadow: 0 3px 10px rgba(11, 31, 63, 0.2);
 }
 
+.form-group {
+    margin-bottom: 1.1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--primary-navy);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    background-color: #FAFBFC;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--secondary-emerald);
+    background-color: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(30, 111, 92, 0.12);
+}
 
 /* ==========================================================================
-   [9] تنسيق القائمة المنسدلة (الصفة) وبطاقات اختيار وسيلة التحقق (جوال / بريد)
-   - طريقة التعديل مستقبلاً: لتغيير لون الإطار عند الاختيار، عدّل (var(--accent-gold)).
+   [4] الأزرار وعناصر التحقق
    ========================================================================== */
-select.form-input {
-    background-color: #ffffff;
+.btn-primary, .btn-emerald {
+    width: 100%;
+    padding: 0.85rem;
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
+    margin-bottom: 0.7rem;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-navy), var(--navy-light));
+    box-shadow: 0 4px 14px rgba(11, 31, 63, 0.22);
+}
+
+.btn-emerald {
+    background: linear-gradient(135deg, var(--secondary-emerald), #165647);
+    box-shadow: 0 4px 14px rgba(30, 111, 92, 0.25);
+}
+
+.btn-primary:active, .btn-emerald:active {
+    transform: scale(0.98);
+}
+
+.btn-outline {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: transparent;
+    color: var(--primary-navy);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.step-badge {
+    display: inline-block;
+    background-color: var(--gold-soft);
+    color: #9A7412;
+    border: 1px solid rgba(197, 155, 39, 0.4);
+    padding: 0.25rem 0.85rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
 }
 
 .step-title {
-    color: var(--primary-navy);
+    color: var(--text-main);
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.92rem;
     margin-bottom: 1rem;
+    line-height: 1.6;
     text-align: center;
 }
 
-.method-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.method-card {
+.email-preview-box {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: center;
+    gap: 0.6rem;
+    background-color: var(--emerald-soft);
+    border: 1.5px solid rgba(30, 111, 92, 0.25);
+    color: var(--primary-navy);
     padding: 0.9rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    background-color: #fafbfc;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.25rem;
     font-size: 0.95rem;
 }
 
-.method-card:hover {
-    border-color: var(--accent-gold);
-    background-color: #ffffff;
-}
-
-.method-card input[type="radio"] {
-    accent-color: var(--primary-navy);
-    width: 18px;
-    height: 18px;
-}
-
-
-/* ==========================================================================
-   [10] تنسيق خانة إدخال رمز التحقق (OTP)
-   - طريقة التعديل مستقبلاً: لتكبير حجم أرقام الرمز، عدّل (font-size: 1.5rem).
-   ========================================================================== */
 .otp-box {
     text-align: center;
-    font-size: 1.5rem;
-    letter-spacing: 0.6rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: 0.7rem;
+    font-weight: 800;
     color: var(--primary-navy);
     direction: ltr;
+    border-color: var(--accent-gold);
 }
 
+.footer-actions {
+    margin-top: 1.2rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.9rem;
+}
+
+.backup-link {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+}
 
 /* ==========================================================================
-   [11] نظام الإشعارات الأنيق في صفحة الدخول (بديل alert المزعج)
+   [5] نظام الإشعارات العائم (Toast)
    ========================================================================== */
 .rasikh-toast {
     position: fixed;
     bottom: 1.5rem;
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
+    transform: translateX(-50%) translateY(120px);
     background-color: var(--primary-navy);
-    color: #ffffff;
+    color: #FFFFFF;
     border-right: 4px solid var(--accent-gold);
-    padding: 0.85rem 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    font-size: 0.9rem;
-    font-weight: 600;
+    padding: 0.85rem 1.4rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(11, 31, 63, 0.28);
+    font-size: 0.88rem;
+    font-weight: 700;
     z-index: 9999;
     opacity: 0;
     transition: all 0.3s ease;
     text-align: center;
+    width: max-content;
     max-width: 90%;
 }
 
