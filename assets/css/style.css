@@ -171,3 +171,98 @@ body {
     color: var(--accent-gold);
     text-decoration: underline;
 }
+/* ==========================================================================
+   [8] تنسيق أزرار التبديل (تسجيل دخول / مستخدم جديد)
+   - الوظيفة: تحويل الأزرار العلوية إلى شريط تبويب أنيق ومتناسق.
+   - طريقة التعديل مستقبلاً: لتغيير لون التبويب النشط، عدّل (var(--primary-navy)).
+   ========================================================================== */
+.auth-tabs {
+    display: flex;
+    background-color: var(--bg-main);
+    padding: 4px;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.65rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background-color: var(--primary-navy);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(11, 31, 63, 0.15);
+}
+
+
+/* ==========================================================================
+   [9] تنسيق القائمة المنسدلة (الصفة) وبطاقات اختيار وسيلة التحقق (جوال / بريد)
+   - طريقة التعديل مستقبلاً: لتغيير لون الإطار عند الاختيار، عدّل (var(--accent-gold)).
+   ========================================================================== */
+select.form-input {
+    background-color: #ffffff;
+    cursor: pointer;
+}
+
+.step-title {
+    color: var(--primary-navy);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.method-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.method-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #fafbfc;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.method-card:hover {
+    border-color: var(--accent-gold);
+    background-color: #ffffff;
+}
+
+.method-card input[type="radio"] {
+    accent-color: var(--primary-navy);
+    width: 18px;
+    height: 18px;
+}
+
+
+/* ==========================================================================
+   [10] تنسيق خانة إدخال رمز التحقق (OTP)
+   - طريقة التعديل مستقبلاً: لتكبير حجم أرقام الرمز، عدّل (font-size: 1.5rem).
+   ========================================================================== */
+.otp-box {
+    text-align: center;
+    font-size: 1.5rem;
+    letter-spacing: 0.6rem;
+    font-weight: 700;
+    color: var(--primary-navy);
+    direction: ltr;
+}
