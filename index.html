@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- عنوان الصفحة الذي يظهر في تبويب المتصفح -->
+    <title>نظام راسخ - تسجيل الدخول</title>
+    
+    <!-- ربط ملف التصميم والألوان الموحد -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <div class="rasikh-container">
+
+        <!-- =================================================================
+             [1] قسم الترويسة والشعار
+             - طريقة التعديل مستقبلاً: لتغيير الاسم أو الوصف، عدّل النص بين الوسوم.
+             - لإضافة صورة شعار مستقبلاً: ضع وسم <img src="مسار_الصورة"> فوق <h1>.
+             ================================================================= -->
+        <div class="header-section">
+            <h1>نظام راسخ</h1>
+            <p>بوابة الدخول وإدارة الحلقات والطلاب</p>
+        </div>
+
+
+        <!-- =================================================================
+             [2] نموذج تسجيل الدخول (البريد الإلكتروني + رقم الجوال)
+             - طريقة التعديل مستقبلاً: لإضافة خانة جديدة (مثل رقم الهوية)، انسخ
+               كتلة <div class="form-group"> بالكامل والصقها تحت خانة الجوال.
+             ================================================================= -->
+        <form id="rasikhLoginForm">
+
+            <!-- خانة البريد الإلكتروني -->
+            <div class="form-group">
+                <label for="userEmail" class="form-label">البريد الإلكتروني</label>
+                <input type="email" id="userEmail" class="form-input" placeholder="example@domain.com" required>
+            </div>
+
+            <!-- خانة رقم الجوال -->
+            <div class="form-group">
+                <label for="userPhone" class="form-label">رقم الجوال</label>
+                <input type="tel" id="userPhone" class="form-input" placeholder="05xxxxxxxx" required>
+            </div>
+
+            <!-- زر إرسال رمز التحقق -->
+            <button type="submit" class="btn-primary">إرسال رمز التحقق (OTP)</button>
+
+            <!-- زر إرسال دعوة -->
+            <button type="button" class="btn-secondary" onclick="sendInvitation()">إرسال دعوة</button>
+
+        </form>
+
+
+        <!-- =================================================================
+             [3] قسم استرجاع النسخة الاحتياطية (أسفل الصفحة بخط صغير)
+             - طريقة التعديل مستقبلاً: لتغيير نص الرابط، عدّل الكلام قبل </a>.
+             ================================================================= -->
+        <div class="footer-actions">
+            <a href="#" id="restoreBackupLink" class="backup-link">استرجاع نسخة احتياطية للنظام</a>
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================================
+         [4] ربط ملف البرمجة والوظائف (يجب أن يبقى دائماً في نهاية الصفحة)
+         ===================================================================== -->
+    <script src="assets/js/script.js"></script>
+
+</body>
+</html>
