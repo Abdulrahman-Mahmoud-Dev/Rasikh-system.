@@ -2,16 +2,30 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام راسخ | بوابة الدخول</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&family=Amiri:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="auth-body">
 
-    <!-- ترويسة الهوية الملكية المقوسة بزخارف المساجد -->
+    <!-- الأيقونات -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+            <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+            <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+            <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></symbol>
+            <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M16 7l3 3"/></symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+            <symbol id="i-mailcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="m3 7 9 6 9-6"/><path d="m15 19 2 2 4-4"/></symbol>
+            <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+        </defs>
+    </svg>
+
+    <!-- الترويسة -->
     <header class="rasikh-hero-header">
         <div class="mosque-silhouette-bg"></div>
         <div class="hero-content">
@@ -23,59 +37,75 @@
         </div>
     </header>
 
-    <!-- بطاقة الدخول العائمة -->
+    <!-- بطاقة الدخول -->
     <main class="auth-main-wrapper">
         <div class="rasikh-auth-card">
 
-            <!-- أزرار التبديل بين (تسجيل دخول) و (مستخدم جديد) -->
             <div class="auth-tabs" id="authTabs">
                 <button type="button" class="tab-btn active" id="tabLogin" onclick="switchMode('login')">تسجيل دخول</button>
                 <button type="button" class="tab-btn" id="tabRegister" onclick="switchMode('register')">مستخدم جديد</button>
             </div>
 
-            <!-- المرحلة الأولى: البيانات الأساسية -->
+            <!-- المرحلة الأولى -->
             <form id="rasikhLoginForm">
+                <h2 class="auth-greet" id="authGreet">أهلا بعودتك</h2>
+                <p class="auth-sub" id="authSub">سجّل دخولك لمتابعة حلقاتك وطلابك</p>
+                <div class="ornament"><span></span></div>
+
                 <div id="newUserFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="fullName" class="form-label">الاسم الثلاثي</label>
-                        <input type="text" id="fullName" class="form-input" placeholder="أدخل اسمك الكامل">
+                    <div class="field">
+                        <label for="fullName">الاسم الثلاثي</label>
+                        <svg class="ic"><use href="#i-user"/></svg>
+                        <input type="text" id="fullName" placeholder="أدخل اسمك الكامل">
                     </div>
 
-                    <div class="form-group">
-                        <label for="userRole" class="form-label">الصفة في النظام</label>
-                        <select id="userRole" class="form-input">
+                    <div class="field">
+                        <label for="userRole">الصفة في النظام</label>
+                        <svg class="ic"><use href="#i-shield"/></svg>
+                        <select id="userRole">
                             <option value="teacher">معلم حلقة</option>
                             <option value="supervisor">مشرف مسجد</option>
                             <option value="admin">إدارة جمعية</option>
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="inviteCode" class="form-label">كود الدعوة (اختياري)</label>
-                        <input type="text" id="inviteCode" class="form-input" placeholder="أدخل الكود إن وُجد">
+                    <div class="field">
+                        <label for="inviteCode">كود الدعوة (اختياري)</label>
+                        <svg class="ic"><use href="#i-key"/></svg>
+                        <input type="text" id="inviteCode" placeholder="أدخل الكود إن وُجد">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="userEmail" class="form-label">البريد الإلكتروني</label>
-                    <input type="email" id="userEmail" class="form-input" placeholder="example@gmail.com" required>
+                <div class="field">
+                    <label for="userEmail">البريد الإلكتروني</label>
+                    <svg class="ic"><use href="#i-mail"/></svg>
+                    <input type="email" id="userEmail" class="ltr" placeholder="example@gmail.com" required>
                 </div>
 
-                <div class="form-group">
-                    <label for="userPhone" class="form-label">رقم الجوال</label>
-                    <input type="tel" id="userPhone" class="form-input" placeholder="05xxxxxxxx" required>
+                <div class="field">
+                    <label for="userPhone">رقم الجوال</label>
+                    <svg class="ic"><use href="#i-phone"/></svg>
+                    <input type="tel" id="userPhone" class="ltr" placeholder="05xxxxxxxx" required>
                 </div>
 
-                <button type="submit" class="btn-primary" id="mainSubmitBtn">متابعة لتسجيل الدخول</button>
+                <button type="submit" class="btn-primary" id="mainSubmitBtn">
+                    <span>متابعة</span>
+                    <svg class="ic-btn"><use href="#i-arrow"/></svg>
+                </button>
+
+                <p class="secure-note">
+                    <svg class="ic-sm"><use href="#i-lock"/></svg>
+                    تحقق آمن برمز يصلك على بريدك
+                </p>
             </form>
 
-            <!-- المرحلة الثانية: تأكيد إرسال الرمز -->
+            <!-- المرحلة الثانية: تأكيد الإرسال -->
             <div id="otpMethodSection" style="display: none;">
-                <div class="step-badge">خطوة التحقق الآمن</div>
-                <p class="step-title">سيتم إرسال رمز تحقق مكون من 4 أرقام إلى بريدك الإلكتروني:</p>
+                <div class="steps"><span class="on"></span><span></span></div>
+                <p class="step-title">سيتم إرسال رمز تحقق مكون من 6 أرقام إلى بريدك الإلكتروني:</p>
 
                 <div class="email-preview-box">
-                    <span class="email-icon">✉️</span>
+                    <svg class="ic-md"><use href="#i-mail"/></svg>
                     <strong id="displayEmail" dir="ltr"></strong>
                 </div>
 
@@ -83,27 +113,32 @@
                 <button type="button" class="btn-outline" onclick="backToStep1()">تعديل البريد الإلكتروني</button>
             </div>
 
-            <!-- المرحلة الثالثة: إدخال رمز التحقق -->
+            <!-- المرحلة الثالثة: إدخال الرمز -->
             <div id="otpVerifySection" style="display: none;">
-                <p class="step-title" id="otpSentMessage">تم إرسال الرمز بنجاح</p>
+                <div class="steps"><span class="on"></span><span class="on"></span></div>
+                <div class="verify-icon"><svg><use href="#i-mailcheck"/></svg></div>
+                <h2 class="verify-title">أدخل رمز التحقق</h2>
+                <p class="step-title" id="otpSentMessage"></p>
 
-                <div class="form-group">
-                    <label for="otpInput" class="form-label">أدخل رمز التحقق (4 أرقام)</label>
-                    <input type="tel" id="otpInput" class="form-input otp-box" placeholder="• • • •" maxlength="4" inputmode="numeric">
+                <div class="otp-row" id="otpBoxes">
+                    <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="الرقم 1">
+                    <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 2">
+                    <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 3">
+                    <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 4">
+                    <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 5">
+                    <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 6">
                 </div>
 
-                <button type="button" class="btn-emerald" onclick="verifyOtpCode()">تأكيد والدخول للنظام</button>
-                <button type="button" class="btn-outline" onclick="backToMethod()">إعادة إرسال الرمز</button>
+                <button type="button" class="btn-emerald" onclick="verifyOtpCode()">تأكيد والدخول</button>
+                <button type="button" class="btn-text" id="resendBtn" onclick="resendOtp()" disabled>إعادة الإرسال</button>
             </div>
 
-            <!-- استرجاع النسخة الاحتياطية -->
             <div class="footer-actions">
                 <a href="#" id="restoreBackupLink" class="backup-link">استرجاع نسخة احتياطية سابقة (.json)</a>
             </div>
         </div>
     </main>
 
-    <!-- حاوية الإشعارات الأنيقة -->
     <div id="rasikhToast" class="rasikh-toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
