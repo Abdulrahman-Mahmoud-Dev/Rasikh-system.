@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام راسخ - التقارير وفهرس الطلاب</title>
+
+    <!-- استدعاء ملفات التصميم الموحدة -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+
+    <!-- =====================================================================
+         تنسيق خاص بالطباعة وتصدير PDF
+         - الوظيفة: إخفاء الأزرار والقوائم عند الطباعة وإظهار ترويسة الفهرس فقط.
+         ===================================================================== -->
+    <style>
+        .print-only-header {
+            display: none;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-gold);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media print {
+            .top-navbar,
+            .period-bar,
+            .no-print,
+            .rasikh-toast {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+            }
+            .main-wrapper {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .section-card {
+                box-shadow: none !important;
+                border: 1px solid #dddddd;
+            }
+            .print-only-header {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =====================================================================
+         [1] الشريط العلوي والتنقل بين صفحات النظام
+         ===================================================================== -->
+    <header class="top-navbar">
+        <div class="brand-title">
+            <span>نظام راسخ</span>
+            <span class="brand-badge" id="currentUserBadge">التقارير والفهرس</span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="dashboard.html" class="nav-item">لوحة التحكم</a>
+            <a href="students.html" class="nav-item">الطلاب والمتابعة</a>
+            <a href="reports.html" class="nav-item active">التقارير والفهرس</a>
+            <a href="../index.html" class="nav-item" onclick="logoutUser()">خروج</a>
+        </nav>
+    </header>
+
+
+    <main class="main-wrapper">
+
+        <!-- =================================================================
+             [2] شريط اختيار العام الهجري والشهر (قابل للتوسع لأي عام مستقبلي)
+             ================================================================= -->
+        <section class="period-bar">
+            <div>
+                <strong style="color: var(--primary-navy);">تقرير وفهرس الفترة:</strong>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">(تحديث تلقائي لإحصائيات الشهر المختار)</span>
+            </div>
+
+            <div class="period-controls">
+                <select id="hijriYearSelect" class="period-select" onchange="changeActivePeriod()"></select>
+                <button type="button" class="btn-small" style="background: var(--accent-gold); color: var(--primary-navy);" onclick="addNewHijriYear()">+ عام جديد</button>
+
+                <select id="hijriMonthSelect" class="period-select" onchange="changeActivePeriod()">
+                    <option value="محرم">محرم</option>
+                    <option value="صفر">صفر</option>
+                    <option value="ربيع الأول">ربيع الأول</option>
+                    <option value="ربيع الآخر">ربيع الآخر</option>
+                    <option value="جمادى الأولى">جمادى الأولى</option>
+                    <option value="جمادى الآخرة">جمادى الآخرة</option>
+                    <option value="رجب">رجب</option>
+                    <option value="شعبان">شعبان</option>
+                    <option value="رمضان">رمضان</option>
+                    <option value="شوال">شوال</option>
+                    <option value="ذو القعدة">ذو القعدة</option>
+                    <option value="ذو الحجة">ذو الحجة</option>
+                </select>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [3] ملخص الإنجاز الشهري (بطاقات إحصائية)
+             ================================================================= -->
+        <section class="stats-grid no-print">
+            <div class="stat-card">
+                <div class="stat-title">إجمالي صفحات الحفظ</div>
+                <div class="stat-value" id="repTotalMem">0</div>
+            </div>
+
+            <div class="stat-card gold-top">
+                <div class="stat-title">إجمالي صفحات المراجعة</div>
+                <div class="stat-value" id="repTotalRev">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-title">متوسط أيام الحضور</div>
+                <div class="stat-value" id="repAvgAtt">0</div>
+            </div>
+
+            <div class="stat-card gold-top">
+                <div class="stat-title">عدد الطلاب في التقرير</div>
+                <div class="stat-value" id="repStudentsCount">0</div>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [4] فهرس الطلاب الشهري المعتمد (مع التصفية والطباعة / PDF)
+             - الوظيفة: عرض كشف منظم بالمسجد والحلقة وإنجاز كل طالب جاهز للطباعة.
+             ================================================================= -->
+        <section class="section-card">
+
+            <!-- ترويسة رسمية تظهر تلقائياً عند الطباعة أو الحفظ كـ PDF -->
+            <div class="print-only-header">
+                <h2 id="printHeaderAssoc" style="color: var(--primary-navy); margin-bottom: 0.3rem;">نظام راسخ لإدارة الحلقات القرآنية</h2>
+                <p id="printHeaderPeriod" style="font-weight: 700; color: #333333;"></p>
+                <p id="printHeaderScope" style="font-size: 0.9rem; color: #555555;"></p>
+            </div>
+
+            <div class="section-header no-print" style="flex-wrap: wrap; gap: 0.75rem;">
+                <h2>1. فهرس الطلاب وتقرير الإنجاز الشهري</h2>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                    <select id="reportMosqueFilter" class="period-select" onchange="onMosqueFilterChange()">
+                        <option value="all">جميع المساجد</option>
+                    </select>
+
+                    <select id="reportCircleFilter" class="period-select" onchange="renderReportTable()">
+                        <option value="all">جميع الحلقات</option>
+                    </select>
+
+                    <button type="button" class="btn-small" style="background: var(--primary-navy); color: #ffffff; padding: 0.55rem 1rem;" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="rasikh-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الطالب</th>
+                            <th>المسجد</th>
+                            <th>الحلقة</th>
+                            <th>الحفظ السابق</th>
+                            <th>أيام الحضور</th>
+                            <th>صفحات الحفظ</th>
+                            <th>صفحات المراجعة</th>
+                            <th>التقدير</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [5] قسم النسخ الاحتياطي ونقل البيانات بين الأجهزة
+             - الوظيفة: تصدير كامل بيانات النظام إلى ملف JSON أو استعادتها بأمان.
+             ================================================================= -->
+        <section class="section-card no-print">
+            <div class="section-header">
+                <h2>2. النسخ الاحتياطي وحماية البيانات</h2>
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                يعمل النظام محلياً على جهازك دون الحاجة للإنترنت؛ يُنصح بتنزيل نسخة احتياطية دورياً لحفظ سجلات الأعوام والطلاب أو نقلها لجهاز آخر.
+            </p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                <button type="button" class="btn-primary" style="max-width: 240px;" onclick="exportBackupFile()">⬇️ تنزيل نسخة احتياطية</button>
+                <button type="button" class="btn-secondary" style="max-width: 240px; margin-top: 0;" onclick="triggerRestoreBackup()">⬆️ استرجاع من ملف نسخة</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- حاوية الإشعارات الأنيقة أسفل الشاشة -->
+    <div id="rasikhToast" class="rasikh-toast"></div>
+
+    <!-- استدعاء ملف برمجة التقارير -->
+    <script src="../assets/js/reports.js"></script>
+</body>
+</html>
