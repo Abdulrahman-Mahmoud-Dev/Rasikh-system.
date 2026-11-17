@@ -1,134 +1,119 @@
-/* ==========================================================================
-   [1] الاتصال بقاعدة البيانات المحلية الموحدة للنظام
-   - الوظيفة: قراءة وحفظ البيانات من نفس مخزن لوحة التحكم لضمان التزامن.
-   - طريقة التوسع مستقبلاً: جميع السنوات والشهور تُنشأ تلقائياً دون تعديل الكود.
-   ========================================================================== */
 const STORAGE_KEY = 'rasikh_system_data_v1';
 
-const defaultData = {
-    years: ['1447 هـ', '1448 هـ'],
-    activeYear: '1448 هـ',
-    activeMonth: 'محرم',
-    association: { name: '', manager: '' },
-    mosques: [],
-    circles: [],
-    students: []
-};
+const SURAHS_LIST = [
+    "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
+    "هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
+    "الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
+    "لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر",
+    "فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق",
+    "الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة",
+    "الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج",
+    "نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس",
+    "التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد",
+    "الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
+    "القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر",
+    "المسد","الإخلاص","الفلق","الناس"
+];
+
+let selectedDateObj = new Date();
+let currentStatusFilter = 'all';
+let activeEvalStudentId = null;
+let activeEvalTrack = 'حفظ';
 
 function getSystemData() {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
-        return JSON.parse(JSON.stringify(defaultData));
-    }
-    return JSON.parse(saved);
+    return saved ? JSON.parse(saved) : {
+        years: ['1447 هـ', '1448 هـ'],
+        activeYear: '1448 هـ',
+        activeMonth: 'محرم',
+        association: { name: '', manager: '' },
+        mosques: [],
+        circles: [],
+        students: []
+    };
 }
 
 function saveSystemData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// مفتاح فريد يجمع العام والشهر النشط (مثال: "1448 هـ_محرم") لفصل سجلات كل شهر
 function getCurrentPeriodKey(data) {
     return `${data.activeYear}_${data.activeMonth}`;
 }
 
+function getDateKey(dateObj) {
+    return dateObj.toISOString().split('T')[0];
+}
 
-/* ==========================================================================
-   [2] نظام الإشعارات الأنيق (بديل alert المنبثقة)
-   ========================================================================== */
 function showToast(message) {
     const toast = document.getElementById('rasikhToast');
     if (!toast) return;
     toast.textContent = message;
     toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
-
 
 /* ==========================================================================
-   [3] إدارة الأعوام الهجرية والشهور (متزامنة مع لوحة التحكم وقابلة للزيادة)
+   [1] التاريخ اليومي والقوائم المنسدلة
    ========================================================================== */
-function renderPeriodControls() {
-    const data = getSystemData();
-    const yearSelect = document.getElementById('hijriYearSelect');
-    const monthSelect = document.getElementById('hijriMonthSelect');
-
-    yearSelect.innerHTML = data.years
-        .map(year => `<option value="${year}" ${year === data.activeYear ? 'selected' : ''}>${year}</option>`)
-        .join('');
-
-    monthSelect.value = data.activeMonth;
+function renderDateHeader() {
+    const daysAr = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const dayName = daysAr[selectedDateObj.getDay()];
+    const dayNum = String(selectedDateObj.getDate()).padStart(2, '0');
+    const monthNum = String(selectedDateObj.getMonth() + 1).padStart(2, '0');
+    document.getElementById('selectedDateDisplay').textContent = `${dayName}, ${dayNum}/${monthNum}`;
 }
 
-function addNewHijriYear() {
-    const data = getSystemData();
-    const lastYearStr = data.years[data.years.length - 1] || '1448 هـ';
-    const lastYearNum = parseInt(lastYearStr.replace(/\D/g, ''), 10) || 1448;
-    const nextYear = `${lastYearNum + 1} هـ`;
-
-    if (!data.years.includes(nextYear)) {
-        data.years.push(nextYear);
-    }
-    data.activeYear = nextYear;
-    saveSystemData(data);
-
-    renderPeriodControls();
-    renderStudentsTable();
-    showToast(`تمت إضافة وتفعيل العام الجديد (${nextYear})`);
+function shiftSelectedDate(deltaDays) {
+    selectedDateObj.setDate(selectedDateObj.getDate() + deltaDays);
+    renderDateHeader();
+    renderStudentsCards();
 }
 
-function changeActivePeriod() {
-    const data = getSystemData();
-    data.activeYear = document.getElementById('hijriYearSelect').value;
-    data.activeMonth = document.getElementById('hijriMonthSelect').value;
-    saveSystemData(data);
-
-    renderStudentsTable();
-    showToast(`عرض سجل: ${data.activeMonth} - ${data.activeYear}`);
-}
-
-
-/* ==========================================================================
-   [4] تعبئة قوائم الحلقات (في نموذج الإضافة وفي قائمة التصفية)
-   ========================================================================== */
-function populateCircleDropdowns() {
+function populateDropdowns() {
     const data = getSystemData();
     const addSelect = document.getElementById('studentCircleSelect');
     const filterSelect = document.getElementById('filterCircleSelect');
 
     if (data.circles.length === 0) {
-        addSelect.innerHTML = `<option value="">-- أضف حلقة من لوحة التحكم أولاً --</option>`;
-        filterSelect.innerHTML = `<option value="all">جميع الحلقات (لا توجد حلقات)</option>`;
-        return;
+        addSelect.innerHTML = `<option value="">-- أضف حلقة من الرئيسية أولاً --</option>`;
+        filterSelect.innerHTML = `<option value="all">جميع الحلقات</option>`;
+    } else {
+        const optionsHtml = data.circles.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        addSelect.innerHTML = optionsHtml;
+        filterSelect.innerHTML = `<option value="all">جميع الحلقات</option>` + optionsHtml;
     }
 
-    const optionsHtml = data.circles.map(c => {
-        const mosque = data.mosques.find(m => m.id === c.mosqueId);
-        const mosqueLabel = mosque ? ` (${mosque.name})` : '';
-        return `<option value="${c.id}">${c.name}${mosqueLabel}</option>`;
-    }).join('');
-
-    addSelect.innerHTML = optionsHtml;
-    filterSelect.innerHTML = `<option value="all">جميع الحلقات</option>` + optionsHtml;
+    const surahsHtml = SURAHS_LIST.map(s => `<option value="${s}">${s}</option>`).join('');
+    document.getElementById('evalFromSurah').innerHTML = surahsHtml;
+    document.getElementById('evalToSurah').innerHTML = surahsHtml;
 }
 
+function openAddStudentSheet() {
+    const data = getSystemData();
+    if (data.circles.length === 0) {
+        showToast('أنشئ حلقة من الرئيسية أولاً قبل تسجيل الطلاب');
+        return;
+    }
+    document.getElementById('sheetAddStudent').classList.add('open');
+}
+
+function closeSheet(id) {
+    document.getElementById(id)?.classList.remove('open');
+}
+
+function closeSheetOnBackdrop(event, id) {
+    if (event.target.id === id) closeSheet(id);
+}
 
 /* ==========================================================================
-   [5] إضافة طالب جديد وحذف طالب
-   - طريقة التوسع مستقبلاً: لإضافة حقل جديد للطالب، أضفه داخل كائن (newStudent).
+   [2] إضافة طالب وحذف طالب
    ========================================================================== */
 function addStudent(event) {
     event.preventDefault();
     const data = getSystemData();
     const circleId = document.getElementById('studentCircleSelect').value;
-
-    if (!circleId) {
-        showToast('يرجى إضافة حلقة من لوحة التحكم أولاً');
-        return;
-    }
+    if (!circleId) return;
 
     const newStudent = {
         id: 'std_' + Date.now(),
@@ -136,156 +121,251 @@ function addStudent(event) {
         name: document.getElementById('studentName').value.trim(),
         prevJuz: parseInt(document.getElementById('studentPrevJuz').value, 10) || 0,
         guardianPhone: document.getElementById('guardianPhone').value.trim(),
-        records: {} // تُخزّن هنا سجلات كل شهر وعام بشكل مستقل
+        records: {},
+        dailyLogs: {}
     };
 
     data.students.push(newStudent);
     saveSystemData(data);
 
     document.getElementById('studentForm').reset();
-    populateCircleDropdowns();
-    renderStudentsTable();
-    showToast(`تم تسجيل الطالب (${newStudent.name}) بنجاح`);
+    closeSheet('sheetAddStudent');
+    renderStudentsCards();
+    showToast(`تم تسجيل الطالب (${newStudent.name})`);
 }
 
-function deleteStudent(studentId) {
+function deleteActiveStudent() {
+    if (!activeEvalStudentId) return;
     const data = getSystemData();
-    data.students = data.students.filter(s => s.id !== studentId);
+    data.students = data.students.filter(s => s.id !== activeEvalStudentId);
     saveSystemData(data);
 
-    renderStudentsTable();
-    showToast('تم حذف سجل الطالب');
+    closeSheet('sheetEvaluateStudent');
+    renderStudentsCards();
+    showToast('تم حذف الطالب من الحلقة');
 }
-
 
 /* ==========================================================================
-   [6] رصد وتحديث الحضور والصفحات والتقدير تلقائياً لكل شهر وعام
-   - الوظيفة: تحفظ أي تعديل يجريه المعلم في الجدول فوراً وتمنح وسام التميز.
-   - طريقة التعديل مستقبلاً: لتغيير شروط الوسام، عدّل دالة (getStudentBadge).
+   [3] الفلاتر والإجراء الجماعي وبطاقات الطلاب
    ========================================================================== */
-function updateStudentRecord(studentId, field, value) {
-    const data = getSystemData();
-    const periodKey = getCurrentPeriodKey(data);
-    const student = data.students.find(s => s.id === studentId);
-    if (!student) return;
-
-    if (!student.records) student.records = {};
-    if (!student.records[periodKey]) {
-        student.records[periodKey] = {
-            attendance: 0,
-            memPages: 0,
-            revPages: 0,
-            grade: 'ممتاز'
-        };
-    }
-
-    student.records[periodKey][field] = field === 'grade' ? value : (parseFloat(value) || 0);
-    saveSystemData(data);
-
-    renderStudentsTable();
-    showToast(`تم تحديث سجل (${student.name})`);
+function setStatusFilter(status, btnEl) {
+    currentStatusFilter = status;
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    renderStudentsCards();
 }
 
-function getStudentBadge(rec) {
-    if (rec.attendance >= 20 && rec.memPages >= 10) {
-        return `<span style="display:inline-block; margin-top:4px; font-size:0.75rem; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:12px; font-weight:700;">🏅 وسام التميز</span>`;
-    }
-    if (rec.attendance >= 18) {
-        return `<span style="display:inline-block; margin-top:4px; font-size:0.75rem; background:#e0f2fe; color:#075985; padding:2px 8px; border-radius:12px; font-weight:700;">🎖️ وسام الانضباط</span>`;
-    }
-    return '';
-}
-
-
-/* ==========================================================================
-   [7] عرض جدول المتابعة اليومية والفهرس التفاعلي للطلاب
-   ========================================================================== */
-function renderStudentsTable() {
+function markAllPresentToday() {
     const data = getSystemData();
-    const periodKey = getCurrentPeriodKey(data);
+    const dateKey = getDateKey(selectedDateObj);
     const selectedCircle = document.getElementById('filterCircleSelect').value;
-    const tbody = document.getElementById('studentsTableBody');
 
-    const filteredStudents = selectedCircle === 'all'
-        ? data.students
-        : data.students.filter(s => s.circleId === selectedCircle);
+    data.students.forEach(s => {
+        if (selectedCircle !== 'all' && s.circleId !== selectedCircle) return;
+        if (!s.dailyLogs) s.dailyLogs = {};
+        if (!s.dailyLogs[dateKey]) {
+            s.dailyLogs[dateKey] = { status: 'حاضر', evaluated: false, memPages: 0, revPages: 0, tilawaPages: 0 };
+        } else {
+            s.dailyLogs[dateKey].status = 'حاضر';
+        }
+    });
 
-    if (filteredStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">لا يوجد طلاب مسجلون في هذه القائمة بعد</td></tr>`;
+    saveSystemData(data);
+    renderStudentsCards();
+    showToast('تم تحضير جميع طلاب القائمة لليوم');
+}
+
+function renderStudentsCards() {
+    const data = getSystemData();
+    const dateKey = getDateKey(selectedDateObj);
+    const selectedCircle = document.getElementById('filterCircleSelect').value;
+    const searchQuery = (document.getElementById('studentSearchInput')?.value || '').trim().toLowerCase();
+    const container = document.getElementById('studentsCardsContainer');
+
+    const circleObj = data.circles.find(c => c.id === selectedCircle);
+    document.getElementById('activeCircleHeaderTitle').textContent = circleObj ? circleObj.name : 'جميع الحلقات';
+
+    let list = data.students.filter(s => {
+        const matchCircle = selectedCircle === 'all' || s.circleId === selectedCircle;
+        const matchSearch = s.name.toLowerCase().includes(searchQuery);
+        const dayLog = (s.dailyLogs && s.dailyLogs[dateKey]) ? s.dailyLogs[dateKey] : { status: 'حاضر', evaluated: false };
+        const matchStatus = currentStatusFilter === 'all' || dayLog.status === currentStatusFilter;
+        return matchCircle && matchSearch && matchStatus;
+    });
+
+    document.getElementById('studentsTotalCount').textContent = `(${list.length})`;
+
+    if (list.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-box">
+                <span class="empty-ico">👨‍🎓</span>
+                <p>لا يوجد طلاب مطابقون للعرض حالياً</p>
+                <button type="button" class="btn-emerald" style="max-width:200px; margin:0.9rem auto 0;" onclick="openAddStudentSheet()">+ أضف طالب جديد</button>
+            </div>`;
         return;
     }
 
-    tbody.innerHTML = filteredStudents.map((student, index) => {
-        const circle = data.circles.find(c => c.id === student.circleId);
-        const circleName = circle ? circle.name : 'غير محدد';
+    container.innerHTML = list.map(s => {
+        const dayLog = (s.dailyLogs && s.dailyLogs[dateKey])
+            ? s.dailyLogs[dateKey]
+            : { status: 'حاضر', evaluated: false };
 
-        // جلب سجل الطالب للشهر والعام النشطين (أو قيم افتراضية صفرية)
-        const rec = (student.records && student.records[periodKey])
-            ? student.records[periodKey]
-            : { attendance: 0, memPages: 0, revPages: 0, grade: 'ممتاز' };
+        const firstLetter = s.name.charAt(0) || 'ط';
+        const isAbsentLike = ['غائب', 'غائب بعذر', 'استئذان'].includes(dayLog.status);
 
-        const badgeHtml = getStudentBadge(rec);
+        let statusClass = 'tag-present';
+        if (dayLog.status === 'غائب') statusClass = 'tag-absent';
+        else if (dayLog.status === 'غائب بعذر' || dayLog.status === 'استئذان') statusClass = 'tag-excused';
+        else if (dayLog.status === 'متأخر') statusClass = 'tag-late';
+
+        const evalBadge = isAbsentLike
+            ? ''
+            : (dayLog.evaluated
+                ? `<span class="badge-tag tag-eval-done">✓ تم التقييم</span>`
+                : `<span class="badge-tag tag-eval-wait">ⓘ لم يكتمل التقييم بعد</span>`);
 
         return `
-            <tr>
-                <td>${index + 1}</td>
-                <td>
-                    <strong>${student.name}</strong>
-                    <div style="font-size:0.78rem; color:var(--text-muted);">الحفظ السابق: ${student.prevJuz} جزء</div>
-                    ${badgeHtml}
-                </td>
-                <td>${circleName}</td>
-                <td>
-                    <input type="number" min="0" max="31" value="${rec.attendance}"
-                        style="width:65px; padding:5px; border:1px solid var(--border-color); border-radius:6px; text-align:center;"
-                        onchange="updateStudentRecord('${student.id}', 'attendance', this.value)">
-                </td>
-                <td>
-                    <input type="number" min="0" step="0.5" value="${rec.memPages}"
-                        style="width:70px; padding:5px; border:1px solid var(--border-color); border-radius:6px; text-align:center;"
-                        onchange="updateStudentRecord('${student.id}', 'memPages', this.value)">
-                </td>
-                <td>
-                    <input type="number" min="0" step="0.5" value="${rec.revPages}"
-                        style="width:70px; padding:5px; border:1px solid var(--border-color); border-radius:6px; text-align:center;"
-                        onchange="updateStudentRecord('${student.id}', 'revPages', this.value)">
-                </td>
-                <td>
-                    <select style="padding:5px; border:1px solid var(--border-color); border-radius:6px; font-weight:600; color:var(--primary-navy);"
-                        onchange="updateStudentRecord('${student.id}', 'grade', this.value)">
-                        <option value="ممتاز" ${rec.grade === 'ممتاز' ? 'selected' : ''}>ممتاز</option>
-                        <option value="جيد جداً" ${rec.grade === 'جيد جداً' ? 'selected' : ''}>جيد جداً</option>
-                        <option value="جيد" ${rec.grade === 'جيد' ? 'selected' : ''}>جيد</option>
-                        <option value="يحتاج متابعة" ${rec.grade === 'يحتاج متابعة' ? 'selected' : ''}>يحتاج متابعة</option>
-                    </select>
-                </td>
-                <td>
-                    <button type="button" class="btn-small btn-danger" onclick="deleteStudent('${student.id}')">حذف</button>
-                </td>
-            </tr>
-        `;
+            <div class="student-card ${!dayLog.evaluated && !isAbsentLike ? 'pending-eval' : ''}" onclick="openStudentEvaluation('${s.id}')" style="cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <div class="student-avatar-circle">${firstLetter}</div>
+                    <div>
+                        <div class="item-title" style="font-size:0.95rem;">${s.name}</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.3rem;">
+                            <span class="badge-tag ${statusClass}">${dayLog.status}</span>
+                            ${evalBadge}
+                        </div>
+                    </div>
+                </div>
+                <span style="color:var(--text-muted); font-weight:800; font-size:1.1rem;">⋮</span>
+            </div>`;
     }).join('');
 }
 
-
 /* ==========================================================================
-   [8] تهيئة الصفحة عند التحميل
+   [4] شاشة تقييم الطالب اليومي وربطها بالسجل الشهري
    ========================================================================== */
-function loadCurrentUser() {
-    const userRaw = localStorage.getItem('rasikh_current_user');
-    if (userRaw) {
-        const user = JSON.parse(userRaw);
-        document.getElementById('currentUserBadge').textContent = user.name;
-    }
+function openStudentEvaluation(studentId) {
+    const data = getSystemData();
+    const student = data.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    activeEvalStudentId = studentId;
+    const dateKey = getDateKey(selectedDateObj);
+    const dayLog = (student.dailyLogs && student.dailyLogs[dateKey])
+        ? student.dailyLogs[dateKey]
+        : { status: 'حاضر', evaluated: false, memPages: 0, revPages: 0, tilawaPages: 0, tajweedErrors: 0, readingErrors: 0 };
+
+    document.getElementById('evalStudentTitle').textContent = student.name;
+    document.getElementById('evalStatusSelect').value = dayLog.status || 'حاضر';
+    document.getElementById('sumMemPages').textContent = dayLog.memPages || 0;
+    document.getElementById('sumRevPages').textContent = dayLog.revPages || 0;
+    document.getElementById('sumTilawaPages').textContent = dayLog.tilawaPages || 0;
+    document.getElementById('tajweedErrors').textContent = dayLog.tajweedErrors || 0;
+    document.getElementById('readingErrors').textContent = dayLog.readingErrors || 0;
+
+    // تجهيز رابط واتساب لولي الأمر
+    const rawPhone = (student.guardianPhone || '').replace(/\D/g, '');
+    const intlPhone = rawPhone.startsWith('05') ? '966' + rawPhone.slice(1) : rawPhone;
+    const waMsg = encodeURIComponent(`السلام عليكم ورحمة الله وبركاته، ولي أمر الطالب (${student.name})، نود إفادتكم بحالة الطالب اليوم في الحلقة.`);
+    document.getElementById('whatsappGuardianLink').href = intlPhone ? `https://wa.me/${intlPhone}?text=${waMsg}` : `https://wa.me/?text=${waMsg}`;
+
+    onEvalStatusChange();
+    document.getElementById('sheetEvaluateStudent').classList.add('open');
 }
 
-function logoutUser() {
-    localStorage.removeItem('rasikh_current_user');
+function onEvalStatusChange() {
+    const status = document.getElementById('evalStatusSelect').value;
+    const isAbsent = ['غائب', 'غائب بعذر', 'استئذان'].includes(status);
+
+    document.getElementById('evalRecitationArea').style.display = isAbsent ? 'none' : 'block';
+    document.getElementById('evalAbsentArea').style.display = isAbsent ? 'block' : 'none';
+    document.getElementById('absentStatusText').textContent = status;
+}
+
+function selectEvalTrack(trackName, btnEl) {
+    activeEvalTrack = trackName;
+    document.querySelectorAll('.eval-type-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+}
+
+function adjustErrorCount(elementId, delta) {
+    const el = document.getElementById(elementId);
+    const current = parseInt(el.textContent, 10) || 0;
+    el.textContent = Math.max(0, current + delta);
+}
+
+function saveDailyEvaluation() {
+    const data = getSystemData();
+    const student = data.students.find(s => s.id === activeEvalStudentId);
+    if (!student) return;
+
+    const dateKey = getDateKey(selectedDateObj);
+    const periodKey = getCurrentPeriodKey(data);
+    const status = document.getElementById('evalStatusSelect').value;
+    const isAbsent = ['غائب', 'غائب بعذر', 'استئذان'].includes(status);
+
+    if (!student.dailyLogs) student.dailyLogs = {};
+    const prevDay = student.dailyLogs[dateKey] || { memPages: 0, revPages: 0, tilawaPages: 0 };
+
+    const addedPages = isAbsent ? 0 : (parseFloat(document.getElementById('evalPagesInput').value) || 0);
+    const tajweedErr = parseInt(document.getElementById('tajweedErrors').textContent, 10) || 0;
+    const readingErr = parseInt(document.getElementById('readingErrors').textContent, 10) || 0;
+
+    let memPages = prevDay.memPages || 0;
+    let revPages = prevDay.revPages || 0;
+    let tilawaPages = prevDay.tilawaPages || 0;
+
+    if (!isAbsent) {
+        if (activeEvalTrack === 'حفظ') memPages = addedPages;
+        else if (activeEvalTrack === 'مراجعة صغرى') revPages = addedPages;
+        else tilawaPages = addedPages;
+    }
+
+    student.dailyLogs[dateKey] = {
+        status: status,
+        evaluated: !isAbsent,
+        memPages: memPages,
+        revPages: revPages,
+        tilawaPages: tilawaPages,
+        fromSurah: document.getElementById('evalFromSurah').value,
+        fromAyah: document.getElementById('evalFromAyah').value,
+        toSurah: document.getElementById('evalToSurah').value,
+        toAyah: document.getElementById('evalToAyah').value,
+        tajweedErrors: tajweedErr,
+        readingErrors: readingErr
+    };
+
+    // تحديث السجل الشهري الموحد تلقائياً ليتزامن مع صفحة التقارير
+    if (!student.records) student.records = {};
+    if (!student.records[periodKey]) {
+        student.records[periodKey] = { attendance: 0, memPages: 0, revPages: 0, grade: 'ممتاز' };
+    }
+
+    let totalAtt = 0, totalMem = 0, totalRev = 0;
+    Object.values(student.dailyLogs).forEach(log => {
+        if (log.status === 'حاضر' || log.status === 'متأخر') totalAtt += 1;
+        totalMem += (log.memPages || 0);
+        totalRev += (log.revPages || 0) + (log.tilawaPages || 0);
+    });
+
+    const totalErrors = tajweedErr + readingErr;
+    const computedGrade = totalErrors === 0 ? 'ممتاز' : (totalErrors <= 2 ? 'جيد جداً' : 'جيد');
+
+    student.records[periodKey] = {
+        attendance: totalAtt,
+        memPages: totalMem,
+        revPages: totalRev,
+        grade: computedGrade
+    };
+
+    saveSystemData(data);
+    closeSheet('sheetEvaluateStudent');
+    renderStudentsCards();
+    showToast(`تم حفظ تقييم (${student.name}) بنجاح`);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadCurrentUser();
-    renderPeriodControls();
-    populateCircleDropdowns();
-    renderStudentsTable();
+    renderDateHeader();
+    populateDropdowns();
+    renderStudentsCards();
 });
