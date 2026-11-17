@@ -2,107 +2,110 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام راسخ - بوابة الدخول</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام راسخ | بوابة الدخول</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
+<body class="auth-body">
 
-    <div class="rasikh-container">
-
-        <!-- [1] الترويسة والشعار -->
-        <div class="header-section">
+    <!-- ترويسة الهوية الملكية المقوسة بزخارف المساجد -->
+    <header class="rasikh-hero-header">
+        <div class="mosque-silhouette-bg"></div>
+        <div class="hero-content">
+            <div class="logo-ring">
+                <img src="1794918114340.jpg" alt="شعار نظام راسخ" class="rasikh-logo-img">
+            </div>
             <h1>نظام راسخ</h1>
-            <p>بوابة الدخول وإدارة الحلقات والطلاب</p>
+            <p>لإدارة جمعيات وحلقات القرآن الكريم</p>
         </div>
+    </header>
 
-        <!-- [2] أزرار التبديل بين (تسجيل دخول) و (مستخدم جديد) -->
-        <div class="auth-tabs" id="authTabs">
-            <button type="button" class="tab-btn active" id="tabLogin" onclick="switchMode('login')">تسجيل دخول</button>
-            <button type="button" class="tab-btn" id="tabRegister" onclick="switchMode('register')">مستخدم جديد</button>
-        </div>
+    <!-- بطاقة الدخول العائمة -->
+    <main class="auth-main-wrapper">
+        <div class="rasikh-auth-card">
 
-        <!-- [3] المرحلة الأولى: إدخال البيانات الأساسية -->
-        <form id="rasikhLoginForm">
-            <div id="newUserFields" style="display: none;">
-                <div class="form-group">
-                    <label for="fullName" class="form-label">الاسم الثلاثي</label>
-                    <input type="text" id="fullName" class="form-input" placeholder="أدخل اسمك الكامل">
+            <!-- أزرار التبديل بين (تسجيل دخول) و (مستخدم جديد) -->
+            <div class="auth-tabs" id="authTabs">
+                <button type="button" class="tab-btn active" id="tabLogin" onclick="switchMode('login')">تسجيل دخول</button>
+                <button type="button" class="tab-btn" id="tabRegister" onclick="switchMode('register')">مستخدم جديد</button>
+            </div>
+
+            <!-- المرحلة الأولى: البيانات الأساسية -->
+            <form id="rasikhLoginForm">
+                <div id="newUserFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="fullName" class="form-label">الاسم الثلاثي</label>
+                        <input type="text" id="fullName" class="form-input" placeholder="أدخل اسمك الكامل">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userRole" class="form-label">الصفة في النظام</label>
+                        <select id="userRole" class="form-input">
+                            <option value="teacher">معلم حلقة</option>
+                            <option value="supervisor">مشرف مسجد</option>
+                            <option value="admin">إدارة جمعية</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inviteCode" class="form-label">كود الدعوة (اختياري)</label>
+                        <input type="text" id="inviteCode" class="form-input" placeholder="أدخل الكود إن وُجد">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="userRole" class="form-label">الصفة في النظام</label>
-                    <select id="userRole" class="form-input">
-                        <option value="teacher">معلم حلقة</option>
-                        <option value="supervisor">مشرف مسجد</option>
-                        <option value="admin">إدارة جمعية</option>
-                    </select>
+                    <label for="userEmail" class="form-label">البريد الإلكتروني</label>
+                    <input type="email" id="userEmail" class="form-input" placeholder="example@gmail.com" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="inviteCode" class="form-label">كود الدعوة (اختياري)</label>
-                    <input type="text" id="inviteCode" class="form-input" placeholder="أدخل الكود إن وُجد">
+                    <label for="userPhone" class="form-label">رقم الجوال</label>
+                    <input type="tel" id="userPhone" class="form-input" placeholder="05xxxxxxxx" required>
                 </div>
+
+                <button type="submit" class="btn-primary" id="mainSubmitBtn">متابعة لتسجيل الدخول</button>
+            </form>
+
+            <!-- المرحلة الثانية: تأكيد إرسال الرمز -->
+            <div id="otpMethodSection" style="display: none;">
+                <div class="step-badge">خطوة التحقق الآمن</div>
+                <p class="step-title">سيتم إرسال رمز تحقق مكون من 4 أرقام إلى بريدك الإلكتروني:</p>
+
+                <div class="email-preview-box">
+                    <span class="email-icon">✉️</span>
+                    <strong id="displayEmail" dir="ltr"></strong>
+                </div>
+
+                <button type="button" class="btn-emerald" id="sendOtpBtn" onclick="sendSelectedOtp()">إرسال رمز التحقق الآن</button>
+                <button type="button" class="btn-outline" onclick="backToStep1()">تعديل البريد الإلكتروني</button>
             </div>
 
-            <div class="form-group">
-                <label for="userEmail" class="form-label">البريد الإلكتروني</label>
-                <input type="email" id="userEmail" class="form-input" placeholder="example@domain.com" required>
+            <!-- المرحلة الثالثة: إدخال رمز التحقق -->
+            <div id="otpVerifySection" style="display: none;">
+                <p class="step-title" id="otpSentMessage">تم إرسال الرمز بنجاح</p>
+
+                <div class="form-group">
+                    <label for="otpInput" class="form-label">أدخل رمز التحقق (4 أرقام)</label>
+                    <input type="tel" id="otpInput" class="form-input otp-box" placeholder="• • • •" maxlength="4" inputmode="numeric">
+                </div>
+
+                <button type="button" class="btn-emerald" onclick="verifyOtpCode()">تأكيد والدخول للنظام</button>
+                <button type="button" class="btn-outline" onclick="backToMethod()">إعادة إرسال الرمز</button>
             </div>
 
-            <div class="form-group">
-                <label for="userPhone" class="form-label">رقم الجوال</label>
-                <input type="tel" id="userPhone" class="form-input" placeholder="05xxxxxxxx" required>
+            <!-- استرجاع النسخة الاحتياطية -->
+            <div class="footer-actions">
+                <a href="#" id="restoreBackupLink" class="backup-link">استرجاع نسخة احتياطية سابقة (.json)</a>
             </div>
-
-            <button type="submit" class="btn-primary" id="mainSubmitBtn">تسجيل دخول</button>
-            <button type="button" class="btn-secondary" onclick="sendInvitation()">إرسال دعوة</button>
-        </form>
-
-        <!-- [4] المرحلة الثانية: اختيار وسيلة استلام رمز التحقق -->
-        <div id="otpMethodSection" style="display: none;">
-            <p class="step-title">اختر وسيلة استلام رمز التحقق:</p>
-
-            <div class="method-options">
-                <label class="method-card">
-                    <input type="radio" name="otpChannel" value="email" checked>
-                    <span>✉️ عبر البريد المباشر (<strong id="displayEmail"></strong>)</span>
-                </label>
-
-                <label class="method-card">
-                    <input type="radio" name="otpChannel" value="phone">
-                    <span>📱 عبر الجوال (<strong id="displayPhone"></strong>)</span>
-                </label>
-            </div>
-
-            <button type="button" class="btn-primary" id="sendOtpBtn" onclick="sendSelectedOtp()">إرسال رمز التحقق</button>
-            <button type="button" class="btn-secondary" onclick="backToStep1()">رجوع لتعديل البيانات</button>
         </div>
-
-        <!-- [5] المرحلة الثالثة: إدخال رمز التحقق المُرسل -->
-        <div id="otpVerifySection" style="display: none;">
-            <p class="step-title" id="otpSentMessage">تم إرسال الرمز بنجاح</p>
-
-            <div class="form-group">
-                <label for="otpInput" class="form-label">أدخل رمز التحقق (4 أرقام)</label>
-                <input type="number" id="otpInput" class="form-input otp-box" placeholder="• • • •" maxlength="4">
-            </div>
-
-            <button type="button" class="btn-primary" onclick="verifyOtpCode()">تأكيد والدخول للنظام</button>
-            <button type="button" class="btn-secondary" onclick="backToMethod()">تغيير وسيلة الإرسال</button>
-        </div>
-
-        <!-- [6] استرجاع النسخة الاحتياطية -->
-        <div class="footer-actions">
-            <a href="#" id="restoreBackupLink" class="backup-link">استرجاع نسخة احتياطية للنظام</a>
-        </div>
-
-    </div>
+    </main>
 
     <!-- حاوية الإشعارات الأنيقة -->
     <div id="rasikhToast" class="rasikh-toast"></div>
 
-    <!-- مكتبة EmailJS لإرسال رمز التحقق الحقيقي مباشرة دون سيرفر -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="assets/js/script.js"></script>
 </body>
