@@ -3,9 +3,9 @@
    - طريقة التعديل: بعد إنشاء حساب مجاني في EmailJS، استبدل القيم الثلاث أدناه.
    ========================================================================== */
 const EMAILJS_CONFIG = {
-    PUBLIC_KEY: 'YOUR_PUBLIC_KEY',
-    SERVICE_ID: 'YOUR_SERVICE_ID',
-    TEMPLATE_ID: 'YOUR_TEMPLATE_ID'
+    PUBLIC_KEY: 'R-1PwjvGMVEsTg1j5',
+    SERVICE_ID: 'service_5lcvg4g',
+    TEMPLATE_ID: 'template_mzni57z'
 };
 
 if (typeof emailjs !== 'undefined' && EMAILJS_CONFIG.PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
