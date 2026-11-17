@@ -1,1 +1,173 @@
+/* ==========================================================================
+   [1] لوحة الألوان الرئيسية لـ (نظام راسخ)
+   - الوظيفة: التحكم في ألوان النظام بالكامل من مكان واحد.
+   - طريقة التعديل مستقبلاً: غيّر رمز اللون (مثل #0b1f3f) وسيتغير في كل الصفحات تلقائياً.
+   ========================================================================== */
+:root {
+    --primary-navy: #0b1f3f;   /* اللون الأساسي: أزرق كحلي */
+    --navy-hover: #132d5e;     /* لون الأزرق الكحلي عند تمرير الماوس أو الضغط */
+    --accent-gold: #d4af37;    /* اللون الثانوي: أصفر ذهبي هادئ */
+    --bg-main: #f4f6f9;        /* لون خلفية الصفحة بالكامل */
+    --card-bg: #ffffff;        /* لون خلفية البطاقة (المربع الأبيض) */
+    --text-color: #333333;     /* لون النصوص الأساسية */
+    --text-muted: #6c757d;     /* لون النصوص الفرعية والهادئة */
+    --border-color: #ced4da;   /* لون حدود خانات الإدخال */
+}
 
+
+/* ==========================================================================
+   [2] الإعدادات العامة للصفحة والخطوط
+   - الوظيفة: ضبط اتجاه الصفحة (من اليمين لليسار) وتوسيط المحتوى في الشاشة.
+   - طريقة التعديل مستقبلاً: لتغيير نوع الخط، عدّل اسم الخط في سطر (font-family).
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-color);
+    direction: rtl;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+
+/* ==========================================================================
+   [3] تصميم بطاقة الدخول الرئيسية
+   - الوظيفة: تنسيق المربع الأبيض الذي يحتوي على نموذج الدخول.
+   - طريقة التعديل مستقبلاً:
+     * لتكبير أو تصغير عرض البطاقة: عدّل رقم (max-width: 450px).
+     * لتغيير سُمك الخط الذهبي العلوي: عدّل رقم (4px) في (border-top).
+   ========================================================================== */
+.rasikh-container {
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(11, 31, 63, 0.08);
+    width: 100%;
+    max-width: 450px;
+    border-top: 4px solid var(--accent-gold);
+}
+
+
+/* ==========================================================================
+   [4] تنسيق العنوان الرئيسي والوصف في أعلى البطاقة
+   - طريقة التعديل مستقبلاً: عدّل (font-size) لتكبير أو تصغير حجم العنوان.
+   ========================================================================== */
+.header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header-section h1 {
+    color: var(--primary-navy);
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.header-section p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+
+/* ==========================================================================
+   [5] تنسيق خانات الإدخال (البريد الإلكتروني ورقم الجوال)
+   - طريقة التعديل مستقبلاً: لتكبير المسافة بين الخانات، عدّل (margin-bottom: 1.25rem).
+   ========================================================================== */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--primary-navy);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-navy);
+}
+
+
+/* ==========================================================================
+   [6] تنسيق الأزرار (زر إرسال التحقق + زر إرسال دعوة)
+   - الوظيفة: (btn-primary) للزر الكحلي الأساسي، و(btn-secondary) للزر المفرغ.
+   ========================================================================== */
+.btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--primary-navy);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: var(--navy-hover);
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: transparent;
+    color: var(--primary-navy);
+    border: 1px solid var(--primary-navy);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(11, 31, 63, 0.05);
+}
+
+
+/* ==========================================================================
+   [7] تنسيق رابط استرجاع النسخة الاحتياطية (أسفل الصفحة)
+   - طريقة التعديل مستقبلاً: لتكبير أو تصغير خط الرابط، عدّل (font-size: 0.75rem).
+   ========================================================================== */
+.footer-actions {
+    margin-top: 2rem;
+    text-align: center;
+    border-top: 1px solid #eeeeee;
+    padding-top: 1rem;
+}
+
+.backup-link {
+    font-size: 0.75rem; /* خط صغير وهادئ */
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.backup-link:hover {
+    color: var(--accent-gold);
+    text-decoration: underline;
+}
