@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام راسخ - الطلاب والمتابعة اليومية</title>
+
+    <!-- استدعاء ملفات التصميم الموحدة -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+</head>
+<body>
+
+    <!-- =====================================================================
+         [1] الشريط العلوي والتنقل بين صفحات النظام
+         ===================================================================== -->
+    <header class="top-navbar">
+        <div class="brand-title">
+            <span>نظام راسخ</span>
+            <span class="brand-badge" id="currentUserBadge">المتابعة اليومية</span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="dashboard.html" class="nav-item">لوحة التحكم</a>
+            <a href="students.html" class="nav-item active">الطلاب والمتابعة</a>
+            <a href="reports.html" class="nav-item">التقارير والفهرس</a>
+            <a href="../index.html" class="nav-item" onclick="logoutUser()">خروج</a>
+        </nav>
+    </header>
+
+
+    <main class="main-wrapper">
+
+        <!-- =================================================================
+             [2] شريط اختيار العام الهجري والشهر (متزامن مع لوحة التحكم وقابل للزيادة)
+             - الوظيفة: تحديد العام والشهر الذي تُرصد فيه درجات وصفحات الطلاب.
+             ================================================================= -->
+        <section class="period-bar">
+            <div>
+                <strong style="color: var(--primary-navy);">سجل المتابعة للفترة:</strong>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">(يُحفظ إنجاز كل شهر وعام بشكل مستقل)</span>
+            </div>
+
+            <div class="period-controls">
+                <select id="hijriYearSelect" class="period-select" onchange="changeActivePeriod()"></select>
+                <button type="button" class="btn-small" style="background: var(--accent-gold); color: var(--primary-navy);" onclick="addNewHijriYear()">+ عام جديد</button>
+
+                <select id="hijriMonthSelect" class="period-select" onchange="changeActivePeriod()">
+                    <option value="محرم">محرم</option>
+                    <option value="صفر">صفر</option>
+                    <option value="ربيع الأول">ربيع الأول</option>
+                    <option value="ربيع الآخر">ربيع الآخر</option>
+                    <option value="جمادى الأولى">جمادى الأولى</option>
+                    <option value="جمادى الآخرة">جمادى الآخرة</option>
+                    <option value="رجب">رجب</option>
+                    <option value="شعبان">شعبان</option>
+                    <option value="رمضان">رمضان</option>
+                    <option value="شوال">شوال</option>
+                    <option value="ذو القعدة">ذو القعدة</option>
+                    <option value="ذو الحجة">ذو الحجة</option>
+                </select>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [3] قسم تسجيل طالب جديد وربطه بالحلقة
+             - طريقة التعديل مستقبلاً: لإضافة حقل (مثل رقم الهوية أو العمر)، انسخ
+               كتلة <div class="form-group"> وأضفها داخل <div class="form-grid">.
+             ================================================================= -->
+        <section class="section-card">
+            <div class="section-header">
+                <h2>1. إضافة طالب جديد</h2>
+            </div>
+
+            <form id="studentForm" onsubmit="addStudent(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">الحلقة القرآنية</label>
+                        <select id="studentCircleSelect" class="form-input" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">اسم الطالب الرباعي</label>
+                        <input type="text" id="studentName" class="form-input" placeholder="أدخل اسم الطالب كاملاً" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">مقدار الحفظ السابق (أجزاء)</label>
+                        <input type="number" id="studentPrevJuz" class="form-input" placeholder="0" min="0" max="30" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">جوال ولي الأمر (اختياري)</label>
+                        <input type="tel" id="guardianPhone" class="form-input" placeholder="05xxxxxxxx">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="max-width: 220px;">+ تسجيل الطالب</button>
+            </form>
+        </section>
+
+
+        <!-- =================================================================
+             [4] قسم رصد الحضور والصفحات والتقييمات (الفهرس التفاعلي)
+             - الوظيفة: تصفية الطلاب حسب الحلقة ورصد إنجازهم الشهري مباشرة.
+             - طريقة التعديل مستقبلاً: لإضافة عمود جديد في الجدول، أضف <th> في الرأس
+               وما يقابله في ملف students.js.
+             ================================================================= -->
+        <section class="section-card">
+            <div class="section-header" style="flex-wrap: wrap; gap: 0.75rem;">
+                <h2>2. سجل متابعة الطلاب ورصد الصفحات</h2>
+
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label for="filterCircleSelect" style="font-size: 0.85rem; color: var(--text-muted);">تصفية بالحلقة:</label>
+                    <select id="filterCircleSelect" class="period-select" onchange="renderStudentsTable()">
+                        <option value="all">جميع الحلقات</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="rasikh-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الطالب</th>
+                            <th>الحلقة</th>
+                            <th>الحضور</th>
+                            <th>صفحات الحفظ</th>
+                            <th>صفحات المراجعة</th>
+                            <th>التقدير</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- حاوية الإشعارات الأنيقة أسفل الشاشة -->
+    <div id="rasikhToast" class="rasikh-toast"></div>
+
+    <!-- استدعاء ملف برمجة الطلاب -->
+    <script src="../assets/js/students.js"></script>
+</body>
+</html>
