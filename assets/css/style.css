@@ -266,3 +266,32 @@ select.form-input {
     color: var(--primary-navy);
     direction: ltr;
 }
+
+
+/* ==========================================================================
+   [11] نظام الإشعارات الأنيق في صفحة الدخول (بديل alert المزعج)
+   ========================================================================== */
+.rasikh-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--primary-navy);
+    color: #ffffff;
+    border-right: 4px solid var(--accent-gold);
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s ease;
+    text-align: center;
+    max-width: 90%;
+}
+
+.rasikh-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
