@@ -1,0 +1,255 @@
+/* ==========================================================================
+   [1] تهيئة الصفحة الداخلية (تستعير الألوان تلقائياً من ملف style.css)
+   - الوظيفة: تحويل الصفحة من بطاقة دخول ضيقة إلى لوحة تحكم كاملة العرض.
+   - طريقة التعديل مستقبلاً: لتغيير لون الخلفية، عدّله من ملف style.css الرئيسي.
+   ========================================================================== */
+body {
+    display: block;
+    padding: 0;
+    background-color: var(--bg-main);
+    min-height: 100vh;
+}
+
+
+/* ==========================================================================
+   [2] الشريط العلوي وقائمة التنقل بين الصفحات
+   - الوظيفة: شريط ثابت في أعلى كل صفحة للتنقل السريع بين أقسام النظام.
+   - طريقة الإضافة مستقبلاً: عند إضافة صفحة جديدة (مثل المعلمين)، أضف رابطها
+     داخل <nav class="nav-links"> وسيأخذ نفس التنسيق تلقائياً.
+   ========================================================================== */
+.top-navbar {
+    background-color: var(--primary-navy);
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+    border-bottom: 3px solid var(--accent-gold);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.brand-badge {
+    background-color: var(--accent-gold);
+    color: var(--primary-navy);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    color: #e2e8f0;
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background-color: rgba(212, 175, 55, 0.2);
+    color: var(--accent-gold);
+}
+
+
+/* ==========================================================================
+   [3] الحاوية الرئيسية وشريط اختيار العام والفترة (قابل للتوسع لأي سنة)
+   - الوظيفة: توسيط المحتوى وتوفير شريط اختيار العام الهجري/الدراسي ديناميكياً.
+   - طريقة التعديل مستقبلاً: لتوسيع عرض الصفحة على الشاشات الكبيرة، عدّل (1100px).
+   ========================================================================== */
+.main-wrapper {
+    max-width: 1100px;
+    margin: 1.5rem auto;
+    padding: 0 1rem 3rem 1rem;
+}
+
+.period-bar {
+    background: var(--card-bg);
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    border-right: 4px solid var(--accent-gold);
+    box-shadow: 0 2px 10px rgba(11, 31, 63, 0.05);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.period-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.period-select {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--primary-navy);
+    font-weight: 600;
+    background-color: #ffffff;
+}
+
+
+/* ==========================================================================
+   [4] شبكة بطاقات الإحصائيات (تتمدد تلقائياً عند إضافة بطاقات جديدة)
+   - الوظيفة: عرض أعداد المساجد والحلقات والطلاب بشكل منظم.
+   - طريقة الإضافة مستقبلاً: أضف أي بطاقة <div class="stat-card"> جديدة
+     وستترتب تلقائياً بجانب البقية دون كسر التصميم.
+   ========================================================================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    padding: 1.25rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(11, 31, 63, 0.05);
+    border-top: 3px solid var(--primary-navy);
+}
+
+.stat-card.gold-top {
+    border-top-color: var(--accent-gold);
+}
+
+.stat-title {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+
+.stat-value {
+    color: var(--primary-navy);
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+
+/* ==========================================================================
+   [5] بطاقات الأقسام والجداول التفاعلية
+   - الوظيفة: حاوية موحدة لأي نموذج إضافة أو جدول عرض داخل الصفحات.
+   ========================================================================== */
+.section-card {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(11, 31, 63, 0.06);
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.section-header h2 {
+    color: var(--primary-navy);
+    font-size: 1.15rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.rasikh-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.rasikh-table th {
+    background-color: var(--primary-navy);
+    color: #ffffff;
+    padding: 0.75rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.rasikh-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eeeeee;
+    color: var(--text-color);
+}
+
+.rasikh-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+.btn-small {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+
+/* ==========================================================================
+   [6] نظام الإشعارات الأنيق (بديل alert المزعج)
+   - الوظيفة: إظهار رسالة تأكيد هادئة في أسفل الشاشة وتختفي تلقائياً.
+   ========================================================================== */
+.rasikh-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--primary-navy);
+    color: #ffffff;
+    border-right: 4px solid var(--accent-gold);
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.rasikh-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
