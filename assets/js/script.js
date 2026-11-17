@@ -1,5 +1,5 @@
 /* ==========================================================================
-   [1] إعدادات خدمة الإرسال المباشر (EmailJS)
+   [1] إعدادات EmailJS والثوابت
    ========================================================================== */
 const EMAILJS_CONFIG = {
     PUBLIC_KEY: 'R-1PwjvGMVEsTg1j5',
@@ -7,15 +7,23 @@ const EMAILJS_CONFIG = {
     TEMPLATE_ID: 'template_mzni57z'
 };
 
+const OTP_LENGTH = 6;
+const OTP_TTL_MS = 5 * 60 * 1000;   // صلاحية الرمز 5 دقائق
+const MAX_ATTEMPTS = 5;             // عدد المحاولات الخاطئة المسموح
+const RESEND_SECONDS = 60;          // مهلة إعادة الإرسال
+
 if (typeof emailjs !== 'undefined') {
     emailjs.init({ publicKey: EMAILJS_CONFIG.PUBLIC_KEY });
 }
 
 let currentAuthMode = 'login';
 let generatedOtp = '';
+let otpExpiresAt = 0;
+let failedAttempts = 0;
+let resendTimerId = null;
 
 /* ==========================================================================
-   [2] نظام الإشعارات الأنيق (Toast)
+   [2] الإشعارات (Toast)
    ========================================================================== */
 function showToast(message) {
     const toast = document.getElementById('rasikhToast');
@@ -36,20 +44,26 @@ function switchMode(mode) {
     const tabRegister = document.getElementById('tabRegister');
     const newUserFields = document.getElementById('newUserFields');
     const fullNameInput = document.getElementById('fullName');
-    const mainSubmitBtn = document.getElementById('mainSubmitBtn');
+    const btnLabel = document.querySelector('#mainSubmitBtn span');
+    const greet = document.getElementById('authGreet');
+    const sub = document.getElementById('authSub');
 
     if (mode === 'register') {
         tabRegister.classList.add('active');
         tabLogin.classList.remove('active');
         newUserFields.style.display = 'block';
         fullNameInput.required = true;
-        mainSubmitBtn.textContent = 'إنشاء حساب والمتابعة';
+        btnLabel.textContent = 'إنشاء حساب والمتابعة';
+        greet.textContent = 'حساب جديد';
+        sub.textContent = 'أدخل بياناتك لإنشاء حسابك في النظام';
     } else {
         tabLogin.classList.add('active');
         tabRegister.classList.remove('active');
         newUserFields.style.display = 'none';
         fullNameInput.required = false;
-        mainSubmitBtn.textContent = 'تسجيل دخول';
+        btnLabel.textContent = 'متابعة';
+        greet.textContent = 'أهلا بعودتك';
+        sub.textContent = 'سجّل دخولك لمتابعة حلقاتك وطلابك';
     }
 }
 
@@ -60,14 +74,7 @@ document.getElementById('rasikhLoginForm')?.addEventListener('submit', function(
     event.preventDefault();
 
     const email = document.getElementById('userEmail').value.trim();
-    const phone = document.getElementById('userPhone')?.value.trim() || '';
-
-    if (document.getElementById('displayPhone')) {
-        document.getElementById('displayPhone').textContent = phone;
-    }
-    if (document.getElementById('displayEmail')) {
-        document.getElementById('displayEmail').textContent = email;
-    }
+    document.getElementById('displayEmail').textContent = email;
 
     document.getElementById('authTabs').style.display = 'none';
     document.getElementById('rasikhLoginForm').style.display = 'none';
@@ -75,12 +82,13 @@ document.getElementById('rasikhLoginForm')?.addEventListener('submit', function(
 });
 
 /* ==========================================================================
-   [5] إرسال رمز التحقق الفعلي مباشرة عبر البريد الإلكتروني (EmailJS)
+   [5] إرسال رمز التحقق عبر EmailJS
    ========================================================================== */
 function sendSelectedOtp() {
     const email = document.getElementById('userEmail').value.trim();
     const userName = document.getElementById('fullName')?.value.trim() || 'عبدالرحمن عبدالقادر';
     const sendBtn = document.getElementById('sendOtpBtn');
+    const resendBtn = document.getElementById('resendBtn');
 
     if (!email) {
         showToast('يرجى إدخال البريد الإلكتروني أولاً');
@@ -92,10 +100,14 @@ function sendSelectedOtp() {
         return;
     }
 
-    generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const random = crypto.getRandomValues(new Uint32Array(1))[0] % 900000 + 100000;
+    generatedOtp = String(random);
+    otpExpiresAt = Date.now() + OTP_TTL_MS;
+    failedAttempts = 0;
 
     sendBtn.disabled = true;
     sendBtn.textContent = 'جاري إرسال الرمز لبريدك...';
+    if (resendBtn) resendBtn.disabled = true;
 
     emailjs.send(EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID, {
         to_email: email,
@@ -103,34 +115,114 @@ function sendSelectedOtp() {
         otp_code: generatedOtp
     }).then(() => {
         sendBtn.disabled = false;
-        sendBtn.textContent = 'إرسال رمز التحقق';
-        document.getElementById('otpSentMessage').innerHTML =
-            `تم إرسال رمز التحقق بنجاح إلى بريدك الإلكتروني:<br><strong style="color:#0B1F3F; direction:ltr; display:inline-block; margin-top:4px;">${email}</strong>`;
+        sendBtn.textContent = 'إرسال رمز التحقق الآن';
+        setSentMessage(email);
         showToast('تم إرسال رمز التحقق إلى بريدك بنجاح');
         goToVerifyScreen();
     }).catch((error) => {
         sendBtn.disabled = false;
-        sendBtn.textContent = 'إرسال رمز التحقق';
+        sendBtn.textContent = 'إرسال رمز التحقق الآن';
+        if (resendBtn) {
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'إعادة إرسال الرمز';
+        }
         console.error('EmailJS Error:', error);
         const errorMsg = error?.text || 'تأكد من تطابق الحقول في EmailJS';
         showToast(`فشل الإرسال: ${errorMsg}`);
     });
 }
 
+function setSentMessage(email) {
+    const msg = document.getElementById('otpSentMessage');
+    msg.textContent = `أرسلنا رمزا من ${OTP_LENGTH} أرقام إلى`;
+    msg.appendChild(document.createElement('br'));
+    const strong = document.createElement('strong');
+    strong.className = 'sent-email';
+    strong.dir = 'ltr';
+    strong.textContent = email;
+    msg.appendChild(strong);
+}
+
 function goToVerifyScreen() {
     document.getElementById('otpMethodSection').style.display = 'none';
     document.getElementById('otpVerifySection').style.display = 'block';
-    document.getElementById('otpInput').value = '';
-    document.getElementById('otpInput').focus();
+    otpBoxes.forEach(box => { box.value = ''; });
+    otpBoxes[0]?.focus();
+    startResendTimer();
 }
 
 /* ==========================================================================
-   [6] التحقق من الرمز والانتقال التلقائي إلى لوحة التحكم
+   [6] خانات الرمز (إدخال تلقائي، حذف، لصق) ومؤقت إعادة الإرسال
+   ========================================================================== */
+const otpBoxes = Array.from(document.querySelectorAll('.otp-digit'));
+
+otpBoxes.forEach((box, i) => {
+    box.addEventListener('input', () => {
+        box.value = box.value.replace(/\D/g, '').slice(-1);
+        if (box.value && i < otpBoxes.length - 1) otpBoxes[i + 1].focus();
+    });
+
+    box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !box.value && i > 0) otpBoxes[i - 1].focus();
+    });
+
+    box.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, otpBoxes.length);
+        digits.split('').forEach((d, k) => { otpBoxes[k].value = d; });
+        otpBoxes[Math.min(digits.length, otpBoxes.length - 1)].focus();
+    });
+});
+
+function startResendTimer() {
+    clearInterval(resendTimerId);
+    const btn = document.getElementById('resendBtn');
+    let left = RESEND_SECONDS - 1;
+    btn.disabled = true;
+
+    const tick = () => {
+        if (left < 0) {
+            clearInterval(resendTimerId);
+            btn.disabled = false;
+            btn.textContent = 'إعادة إرسال الرمز';
+            return;
+        }
+        btn.textContent = `إعادة الإرسال بعد 00:${String(left).padStart(2, '0')}`;
+        left--;
+    };
+
+    tick();
+    resendTimerId = setInterval(tick, 1000);
+}
+
+function resendOtp() {
+    sendSelectedOtp();
+}
+
+/* ==========================================================================
+   [7] التحقق من الرمز والانتقال إلى لوحة التحكم
    ========================================================================== */
 function verifyOtpCode() {
-    const enteredCode = document.getElementById('otpInput').value.trim();
+    const enteredCode = otpBoxes.map(b => b.value).join('');
 
-    if (enteredCode === generatedOtp && generatedOtp !== '') {
+    if (generatedOtp === '') {
+        showToast('اطلب رمز تحقق جديدا أولاً');
+        return;
+    }
+
+    if (Date.now() > otpExpiresAt) {
+        generatedOtp = '';
+        showToast('انتهت صلاحية الرمز، اطلب رمزا جديدا');
+        return;
+    }
+
+    if (enteredCode.length < OTP_LENGTH) {
+        showToast('أدخل رمز التحقق كاملا');
+        return;
+    }
+
+    if (enteredCode === generatedOtp) {
+        generatedOtp = '';
         const userData = {
             name: document.getElementById('fullName')?.value.trim() || 'عبدالرحمن عبدالقادر',
             role: document.getElementById('userRole')?.value || 'مشرف عام',
@@ -144,13 +236,20 @@ function verifyOtpCode() {
         setTimeout(() => {
             window.location.href = 'pages/dashboard.html';
         }, 800);
+        return;
+    }
+
+    failedAttempts++;
+    if (failedAttempts >= MAX_ATTEMPTS) {
+        generatedOtp = '';
+        showToast('تجاوزت عدد المحاولات، اطلب رمزا جديدا');
     } else {
         showToast('رمز التحقق غير صحيح، يرجى التأكد من البريد');
     }
 }
 
 /* ==========================================================================
-   [7] أزرار الرجوع واسترجاع النسخة الاحتياطية
+   [8] أزرار الرجوع واسترجاع النسخة الاحتياطية
    ========================================================================== */
 function backToStep1() {
     document.getElementById('otpMethodSection').style.display = 'none';
@@ -159,6 +258,7 @@ function backToStep1() {
 }
 
 function backToMethod() {
+    clearInterval(resendTimerId);
     document.getElementById('otpVerifySection').style.display = 'none';
     document.getElementById('otpMethodSection').style.display = 'block';
 }
