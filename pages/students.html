@@ -2,148 +2,435 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام راسخ - الطلاب والمتابعة اليومية</title>
-
-    <!-- استدعاء ملفات التصميم الموحدة -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام راسخ | الطلاب والتقييم اليومي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <style>
+        .date-nav-card {
+            background: #FFFFFF;
+            border-radius: 18px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 14px rgba(11, 31, 63, 0.06);
+            border: 1px solid var(--border-color);
+            margin-bottom: 0.9rem;
+        }
+        .date-arrow-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-main);
+            color: var(--primary-navy);
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .action-pills-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 0.85rem;
+        }
+        .pill-btn {
+            flex: 1;
+            padding: 0.68rem 0.8rem;
+            border-radius: 14px;
+            border: 1.5px solid var(--border-color);
+            background: #FFFFFF;
+            color: var(--primary-navy);
+            font-weight: 800;
+            font-size: 0.86rem;
+            cursor: pointer;
+        }
+        .pill-btn.emerald {
+            background: var(--secondary-emerald);
+            color: #FFFFFF;
+            border-color: var(--secondary-emerald);
+        }
+        .status-filter-scroll {
+            display: flex;
+            gap: 0.45rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.85rem;
+            scrollbar-width: none;
+        }
+        .status-filter-scroll::-webkit-scrollbar { display: none; }
+        .filter-chip {
+            padding: 0.45rem 0.9rem;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: #FFFFFF;
+            color: var(--text-main);
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .filter-chip.active {
+            background: var(--primary-navy);
+            color: #FFFFFF;
+            border-color: var(--primary-navy);
+        }
+        .student-card {
+            background: #FFFFFF;
+            border-radius: 18px;
+            padding: 0.95rem 1rem;
+            margin-bottom: 0.75rem;
+            border: 1.5px solid var(--border-color);
+            box-shadow: 0 3px 12px rgba(11, 31, 63, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .student-card.pending-eval {
+            border-color: rgba(197, 155, 39, 0.55);
+            background: #FFFEFA;
+        }
+        .student-avatar-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-navy), var(--navy-light));
+            color: #FFFFFF;
+            font-weight: 800;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .tag-present { background: var(--emerald-soft); color: var(--secondary-emerald); }
+        .tag-absent { background: #FEE2E2; color: #DC2626; }
+        .tag-excused { background: var(--gold-soft); color: #9A7412; }
+        .tag-late { background: #E0F2FE; color: #0369A1; }
+        .tag-eval-done { background: var(--emerald-soft); color: var(--secondary-emerald); }
+        .tag-eval-wait { background: var(--gold-soft); color: #9A7412; }
+
+        /* نافذة التقييم اليومي */
+        .eval-summary-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            background: var(--bg-main);
+            border-radius: 14px;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .eval-summary-item strong {
+            display: block;
+            font-size: 1.2rem;
+            color: var(--primary-navy);
+        }
+        .eval-summary-item span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .eval-type-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.45rem;
+            margin-bottom: 1rem;
+        }
+        .eval-type-btn {
+            padding: 0.6rem 0.4rem;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: #FFFFFF;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .eval-type-btn.active {
+            background: var(--secondary-emerald);
+            color: #FFFFFF;
+            border-color: var(--secondary-emerald);
+        }
+        .counter-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.4rem 0.6rem;
+            background: #FAFBFC;
+        }
+        .counter-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary-navy);
+            color: #FFFFFF;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .whatsapp-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: 14px;
+            background: #16A34A;
+            color: #FFFFFF;
+            font-weight: 800;
+            text-decoration: none;
+            margin-top: 0.85rem;
+        }
+    </style>
 </head>
-<body>
+<body class="app-body">
 
     <!-- =====================================================================
-         [1] الشريط العلوي والتنقل بين صفحات النظام
+         [1] الترويسة العلوية المقوسة
          ===================================================================== -->
-    <header class="top-navbar">
-        <div class="brand-title">
-            <span>نظام راسخ</span>
-            <span class="brand-badge" id="currentUserBadge">المتابعة اليومية</span>
-        </div>
+    <header class="app-header">
+        <div class="mosque-silhouette-bg"></div>
 
-        <nav class="nav-links">
-            <a href="dashboard.html" class="nav-item">لوحة التحكم</a>
-            <a href="students.html" class="nav-item active">الطلاب والمتابعة</a>
-            <a href="reports.html" class="nav-item">التقارير والفهرس</a>
-            <a href="../index.html" class="nav-item" onclick="logoutUser()">خروج</a>
-        </nav>
+        <div class="app-header-top">
+            <div class="user-welcome-box">
+                <a href="dashboard.html" style="color:#FFFFFF; text-decoration:none; font-size:1.35rem; font-weight:800; padding-left:4px;">→</a>
+                <div>
+                    <span class="welcome-label">المتابعة والتقييم اليومي</span>
+                    <div class="welcome-name" id="activeCircleHeaderTitle">جميع الحلقات</div>
+                </div>
+            </div>
+
+            <select id="filterCircleSelect" class="period-select-mini" onchange="renderStudentsCards()" style="max-width:155px;">
+                <option value="all">جميع الحلقات</option>
+            </select>
+        </div>
     </header>
 
+    <!-- =====================================================================
+         [2] المحتوى الرئيسي (التاريخ + الفلاتر + بطاقات الطلاب)
+         ===================================================================== -->
+    <main class="app-main">
 
-    <main class="main-wrapper">
-
-        <!-- =================================================================
-             [2] شريط اختيار العام الهجري والشهر (متزامن مع لوحة التحكم وقابل للزيادة)
-             - الوظيفة: تحديد العام والشهر الذي تُرصد فيه درجات وصفحات الطلاب.
-             ================================================================= -->
-        <section class="period-bar">
-            <div>
-                <strong style="color: var(--primary-navy);">سجل المتابعة للفترة:</strong>
-                <span style="color: var(--text-muted); font-size: 0.85rem;">(يُحفظ إنجاز كل شهر وعام بشكل مستقل)</span>
+        <!-- شريط التنقل بالتاريخ -->
+        <div class="date-nav-card">
+            <button type="button" class="date-arrow-btn" onclick="shiftSelectedDate(-1)">›</button>
+            <div style="font-weight:800; color:var(--primary-navy); font-size:0.95rem;">
+                📅 <span id="selectedDateDisplay">اليوم</span>
             </div>
+            <button type="button" class="date-arrow-btn" onclick="shiftSelectedDate(1)">‹</button>
+        </div>
 
-            <div class="period-controls">
-                <select id="hijriYearSelect" class="period-select" onchange="changeActivePeriod()"></select>
-                <button type="button" class="btn-small" style="background: var(--accent-gold); color: var(--primary-navy);" onclick="addNewHijriYear()">+ عام جديد</button>
-
-                <select id="hijriMonthSelect" class="period-select" onchange="changeActivePeriod()">
-                    <option value="محرم">محرم</option>
-                    <option value="صفر">صفر</option>
-                    <option value="ربيع الأول">ربيع الأول</option>
-                    <option value="ربيع الآخر">ربيع الآخر</option>
-                    <option value="جمادى الأولى">جمادى الأولى</option>
-                    <option value="جمادى الآخرة">جمادى الآخرة</option>
-                    <option value="رجب">رجب</option>
-                    <option value="شعبان">شعبان</option>
-                    <option value="رمضان">رمضان</option>
-                    <option value="شوال">شوال</option>
-                    <option value="ذو القعدة">ذو القعدة</option>
-                    <option value="ذو الحجة">ذو الحجة</option>
-                </select>
+        <!-- صف العنوان وأزرار الإضافة والإجراء الجماعي -->
+        <div class="section-heading-row" style="margin-top:0.2rem;">
+            <h2>الطلاب <span id="studentsTotalCount" style="color:var(--secondary-emerald);">(0)</span></h2>
+            <div class="action-pills-row" style="margin-bottom:0;">
+                <button type="button" class="pill-btn" onclick="markAllPresentToday()">إجراء جماعي ✓</button>
+                <button type="button" class="pill-btn emerald" onclick="openAddStudentSheet()">+ أضف طالب</button>
             </div>
-        </section>
+        </div>
 
+        <!-- البحث عن طالب -->
+        <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="studentSearchInput" placeholder="البحث عن طالب..." oninput="renderStudentsCards()">
+        </div>
 
-        <!-- =================================================================
-             [3] قسم تسجيل طالب جديد وربطه بالحلقة
-             - طريقة التعديل مستقبلاً: لإضافة حقل (مثل رقم الهوية أو العمر)، انسخ
-               كتلة <div class="form-group"> وأضفها داخل <div class="form-grid">.
-             ================================================================= -->
-        <section class="section-card">
-            <div class="section-header">
-                <h2>1. إضافة طالب جديد</h2>
-            </div>
+        <!-- فلاتر الحضور -->
+        <div class="status-filter-scroll" id="statusFilterBar">
+            <button type="button" class="filter-chip active" onclick="setStatusFilter('all', this)">الكل</button>
+            <button type="button" class="filter-chip" onclick="setStatusFilter('حاضر', this)">حاضر</button>
+            <button type="button" class="filter-chip" onclick="setStatusFilter('غائب', this)">غائب</button>
+            <button type="button" class="filter-chip" onclick="setStatusFilter('غائب بعذر', this)">غائب بعذر</button>
+            <button type="button" class="filter-chip" onclick="setStatusFilter('متأخر', this)">متأخر</button>
+            <button type="button" class="filter-chip" onclick="setStatusFilter('استئذان', this)">استئذان</button>
+        </div>
 
-            <form id="studentForm" onsubmit="addStudent(event)">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">الحلقة القرآنية</label>
-                        <select id="studentCircleSelect" class="form-input" required></select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">اسم الطالب الرباعي</label>
-                        <input type="text" id="studentName" class="form-input" placeholder="أدخل اسم الطالب كاملاً" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">مقدار الحفظ السابق (أجزاء)</label>
-                        <input type="number" id="studentPrevJuz" class="form-input" placeholder="0" min="0" max="30" value="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">جوال ولي الأمر (اختياري)</label>
-                        <input type="tel" id="guardianPhone" class="form-input" placeholder="05xxxxxxxx">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-primary" style="max-width: 220px;">+ تسجيل الطالب</button>
-            </form>
-        </section>
-
-
-        <!-- =================================================================
-             [4] قسم رصد الحضور والصفحات والتقييمات (الفهرس التفاعلي)
-             - الوظيفة: تصفية الطلاب حسب الحلقة ورصد إنجازهم الشهري مباشرة.
-             - طريقة التعديل مستقبلاً: لإضافة عمود جديد في الجدول، أضف <th> في الرأس
-               وما يقابله في ملف students.js.
-             ================================================================= -->
-        <section class="section-card">
-            <div class="section-header" style="flex-wrap: wrap; gap: 0.75rem;">
-                <h2>2. سجل متابعة الطلاب ورصد الصفحات</h2>
-
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <label for="filterCircleSelect" style="font-size: 0.85rem; color: var(--text-muted);">تصفية بالحلقة:</label>
-                    <select id="filterCircleSelect" class="period-select" onchange="renderStudentsTable()">
-                        <option value="all">جميع الحلقات</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="rasikh-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>اسم الطالب</th>
-                            <th>الحلقة</th>
-                            <th>الحضور</th>
-                            <th>صفحات الحفظ</th>
-                            <th>صفحات المراجعة</th>
-                            <th>التقدير</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentsTableBody"></tbody>
-                </table>
-            </div>
-        </section>
-
+        <!-- قائمة بطاقات الطلاب -->
+        <div id="studentsCardsContainer"></div>
     </main>
 
-    <!-- حاوية الإشعارات الأنيقة أسفل الشاشة -->
-    <div id="rasikhToast" class="rasikh-toast"></div>
+    <!-- =====================================================================
+         [3] شريط التنقل السفلي الثابت
+         ===================================================================== -->
+    <nav class="bottom-nav-bar">
+        <button type="button" class="bottom-nav-item" onclick="window.location.href='dashboard.html'">
+            <span class="nav-ico">🕌</span>
+            <span>الرئيسية</span>
+        </button>
 
-    <!-- استدعاء ملف برمجة الطلاب -->
+        <button type="button" class="bottom-nav-item active">
+            <span class="nav-ico">👨‍🎓</span>
+            <span>الطلاب</span>
+        </button>
+
+        <div class="fab-wrapper">
+            <button type="button" class="fab-add-btn" onclick="openAddStudentSheet()" aria-label="إضافة طالب">+</button>
+        </div>
+
+        <button type="button" class="bottom-nav-item" onclick="window.location.href='reports.html'">
+            <span class="nav-ico">📊</span>
+            <span>التقارير</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" onclick="window.location.href='dashboard.html'">
+            <span class="nav-ico">•••</span>
+            <span>المزيد</span>
+        </button>
+    </nav>
+
+    <!-- =====================================================================
+         [4] القوائم المنبثقة (إضافة طالب + تقييم الطالب اليومي)
+         ===================================================================== -->
+
+    <!-- نافذة إضافة طالب جديد -->
+    <div id="sheetAddStudent" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetAddStudent')">
+        <div class="bottom-sheet-box">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">تسجيل طالب جديد في الحلقة</div>
+            <form id="studentForm" onsubmit="addStudent(event)">
+                <div class="form-group">
+                    <label class="form-label">الحلقة القرآنية</label>
+                    <select id="studentCircleSelect" class="form-input" required></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">اسم الطالب الرباعي</label>
+                    <input type="text" id="studentName" class="form-input" placeholder="أدخل اسم الطالب كاملاً" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">مقدار الحفظ السابق (أجزاء)</label>
+                    <input type="number" id="studentPrevJuz" class="form-input" min="0" max="30" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">جوال ولي الأمر (للتواصل عبر واتساب)</label>
+                    <input type="tel" id="guardianPhone" class="form-input" placeholder="05xxxxxxxx">
+                </div>
+                <button type="submit" class="btn-emerald">حفظ وتسجيل الطالب</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة تقييم الطالب اليومي (الحالة + الحفظ والمراجعة) -->
+    <div id="sheetEvaluateStudent" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetEvaluateStudent')">
+        <div class="bottom-sheet-box">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title" id="evalStudentTitle">تقييم الطالب</div>
+
+            <!-- اختيار حالة الطالب اليوم -->
+            <div class="form-group">
+                <label class="form-label">حالة الطالب اليوم</label>
+                <select id="evalStatusSelect" class="form-input" onchange="onEvalStatusChange()">
+                    <option value="حاضر">حاضر</option>
+                    <option value="متأخر">متأخر</option>
+                    <option value="غائب">غائب</option>
+                    <option value="غائب بعذر">غائب بعذر</option>
+                    <option value="استئذان">استئذان</option>
+                </select>
+            </div>
+
+            <!-- شاشة التسميع (تظهر للحاضر والمتأخر) -->
+            <div id="evalRecitationArea">
+                <div class="eval-summary-strip">
+                    <div class="eval-summary-item">
+                        <strong id="sumMemPages">0</strong>
+                        <span>أوجه الحفظ</span>
+                    </div>
+                    <div class="eval-summary-item">
+                        <strong id="sumRevPages">0</strong>
+                        <span>أوجه المراجعة</span>
+                    </div>
+                    <div class="eval-summary-item">
+                        <strong id="sumTilawaPages">0</strong>
+                        <span>أوجه التلاوة</span>
+                    </div>
+                </div>
+
+                <div class="eval-type-tabs">
+                    <button type="button" class="eval-type-btn active" onclick="selectEvalTrack('حفظ', this)">حفظ</button>
+                    <button type="button" class="eval-type-btn" onclick="selectEvalTrack('مراجعة صغرى', this)">مراجعة صغرى</button>
+                    <button type="button" class="eval-type-btn" onclick="selectEvalTrack('مراجعة كبرى', this)">مراجعة كبرى</button>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem;">
+                    <div class="form-group">
+                        <label class="form-label">من سورة *</label>
+                        <select id="evalFromSurah" class="form-input"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الآية *</label>
+                        <input type="number" id="evalFromAyah" class="form-input" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">إلى سورة *</label>
+                        <select id="evalToSurah" class="form-input"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الآية *</label>
+                        <input type="number" id="evalToAyah" class="form-input" min="1" value="10">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">عدد الأوجه المنجزة في هذه الجلسة</label>
+                    <input type="number" id="evalPagesInput" class="form-input" min="0" step="0.5" value="1">
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem; margin-bottom:1rem;">
+                    <div>
+                        <label class="form-label">أخطاء التجويد</label>
+                        <div class="counter-box">
+                            <button type="button" class="counter-btn" onclick="adjustErrorCount('tajweedErrors', 1)">+</button>
+                            <strong id="tajweedErrors">0</strong>
+                            <button type="button" class="counter-btn" onclick="adjustErrorCount('tajweedErrors', -1)">-</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">أخطاء القراءة</label>
+                        <div class="counter-box">
+                            <button type="button" class="counter-btn" onclick="adjustErrorCount('readingErrors', 1)">+</button>
+                            <strong id="readingErrors">0</strong>
+                            <button type="button" class="counter-btn" onclick="adjustErrorCount('readingErrors', -1)">-</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-emerald" onclick="saveDailyEvaluation()">حفظ التقييم وإنهاء اليوم</button>
+            </div>
+
+            <!-- شاشة الغياب أو الاستئذان (تظهر عند الغياب) -->
+            <div id="evalAbsentArea" style="display:none; text-align:center; padding:1rem 0;">
+                <div style="font-size:2.4rem; margin-bottom:0.4rem;">📋</div>
+                <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6;">
+                    تم تسجيل حالة الطالب كـ <strong id="absentStatusText" style="color:var(--primary-navy);">غائب</strong>، ولذلك لا يمكن تسجيل تقييم للمقررات اليوم.
+                </p>
+                <a id="whatsappGuardianLink" href="#" target="_blank" class="whatsapp-btn">
+                    💬 التواصل مع ولي الأمر (واتساب)
+                </a>
+                <button type="button" class="btn-primary" style="margin-top:0.75rem;" onclick="saveDailyEvaluation()">تأكيد وحفظ الحالة</button>
+            </div>
+
+            <button type="button" class="sheet-action-btn danger" style="margin-top:0.75rem; justify-content:center;" onclick="deleteActiveStudent()">
+                🗑️ حذف الطالب من الحلقة
+            </button>
+        </div>
+    </div>
+
+    <div id="rasikhToast" class="rasikh-toast"></div>
     <script src="../assets/js/students.js"></script>
 </body>
 </html>
