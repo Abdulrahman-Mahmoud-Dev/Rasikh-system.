@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام راسخ - لوحة التحكم والهيكل الإداري</title>
+
+    <!-- استدعاء ملف الألوان الأساسي + ملف تنسيق اللوحات الداخلية -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+</head>
+<body>
+
+    <!-- =====================================================================
+         [1] الشريط العلوي والتنقل بين صفحات النظام
+         - طريقة التعديل مستقبلاً: لإضافة صفحة جديدة، انسخ سطر <a class="nav-item">
+           وغيّر اسمه ورابطه.
+         ===================================================================== -->
+    <header class="top-navbar">
+        <div class="brand-title">
+            <span>نظام راسخ</span>
+            <span class="brand-badge" id="currentUserBadge">لوحة الإدارة</span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="dashboard.html" class="nav-item active">لوحة التحكم</a>
+            <a href="students.html" class="nav-item">الطلاب والمتابعة</a>
+            <a href="reports.html" class="nav-item">التقارير والفهرس</a>
+            <a href="../index.html" class="nav-item" onclick="logoutUser()">خروج</a>
+        </nav>
+    </header>
+
+
+    <main class="main-wrapper">
+
+        <!-- =================================================================
+             [2] شريط اختيار العام الهجري والشهر (قابل للتوسع لأي سنة مستقبلية)
+             - الوظيفة: يتيح التنقل بين الأعوام والشهور وزر إضافة أي عام جديد مستقبلاً.
+             ================================================================= -->
+        <section class="period-bar">
+            <div>
+                <strong style="color: var(--primary-navy);">الفترة التشغيلية النشطة:</strong>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">(تُحفظ البيانات لكل عام بشكل مستقل)</span>
+            </div>
+
+            <div class="period-controls">
+                <select id="hijriYearSelect" class="period-select" onchange="changeActivePeriod()"></select>
+                <button type="button" class="btn-small" style="background: var(--accent-gold); color: var(--primary-navy);" onclick="addNewHijriYear()">+ عام جديد</button>
+
+                <select id="hijriMonthSelect" class="period-select" onchange="changeActivePeriod()">
+                    <option value="محرم">محرم</option>
+                    <option value="صفر">صفر</option>
+                    <option value="ربيع الأول">ربيع الأول</option>
+                    <option value="ربيع الآخر">ربيع الآخر</option>
+                    <option value="جمادى الأولى">جمادى الأولى</option>
+                    <option value="جمادى الآخرة">جمادى الآخرة</option>
+                    <option value="رجب">رجب</option>
+                    <option value="شعبان">شعبان</option>
+                    <option value="رمضان">رمضان</option>
+                    <option value="شوال">شوال</option>
+                    <option value="ذو القعدة">ذو القعدة</option>
+                    <option value="ذو الحجة">ذو الحجة</option>
+                </select>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [3] بطاقات الإحصائيات العامة (تتحدث تلقائياً عند الإضافة أو الحذف)
+             ================================================================= -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">عدد المساجد المسجلة</div>
+                <div class="stat-value" id="statMosquesCount">0</div>
+            </div>
+
+            <div class="stat-card gold-top">
+                <div class="stat-title">عدد الحلقات القرآنية</div>
+                <div class="stat-value" id="statCirclesCount">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-title">إجمالي الطلاب</div>
+                <div class="stat-value" id="statStudentsCount">0</div>
+            </div>
+
+            <div class="stat-card gold-top">
+                <div class="stat-title">العام الدراسي النشط</div>
+                <div class="stat-value" id="statActiveYear" style="font-size: 1.35rem;">1448 هـ</div>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [4] قسم بيانات الجمعية / الجهة المشرفة
+             - الوظيفة: حفظ اسم الجمعية والمشرف العام ليظهر تلقائياً في التقارير.
+             ================================================================= -->
+        <section class="section-card">
+            <div class="section-header">
+                <h2>1. بيانات الجمعية / الجهة المشرفة</h2>
+            </div>
+
+            <form id="associationForm" onsubmit="saveAssociationInfo(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">اسم الجمعية أو الجهة</label>
+                        <input type="text" id="assocName" class="form-input" placeholder="مثال: جمعية تحفيظ القرآن الكريم" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">اسم المشرف العام</label>
+                        <input type="text" id="assocManager" class="form-input" placeholder="اسم مدير الشؤون التعليمية" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="max-width: 220px;">حفظ بيانات الجمعية</button>
+            </form>
+        </section>
+
+
+        <!-- =================================================================
+             [5] قسم إدارة المساجد التابعة للجمعية
+             - طريقة التعديل مستقبلاً: لإضافة حقل للمسجد (مثل الحي)، أضفه في form-grid.
+             ================================================================= -->
+        <section class="section-card">
+            <div class="section-header">
+                <h2>2. إدارة المساجد</h2>
+            </div>
+
+            <form id="mosqueForm" onsubmit="addMosque(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">اسم المسجد / الجامع</label>
+                        <input type="text" id="mosqueName" class="form-input" placeholder="مثال: مسجد أسامة بن زيد" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">مشرف المسجد</label>
+                        <input type="text" id="mosqueSupervisor" class="form-input" placeholder="اسم مشرف المسجد" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="max-width: 220px;">+ إضافة مسجد</button>
+            </form>
+
+            <div class="table-responsive" style="margin-top: 1rem;">
+                <table class="rasikh-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم المسجد</th>
+                            <th>مشرف المسجد</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mosquesTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             [6] قسم إدارة الحلقات القرآنية وربطها بالمساجد
+             ================================================================= -->
+        <section class="section-card">
+            <div class="section-header">
+                <h2>3. إدارة الحلقات القرآنية</h2>
+            </div>
+
+            <form id="circleForm" onsubmit="addCircle(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">المسجد التابع له</label>
+                        <select id="circleMosqueSelect" class="form-input" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">اسم الحلقة</label>
+                        <input type="text" id="circleName" class="form-input" placeholder="مثال: حلقة أبي بكر الصديق" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">اسم المعلم</label>
+                        <input type="text" id="circleTeacher" class="form-input" placeholder="اسم معلم الحلقة" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="max-width: 220px;">+ إضافة حلقة</button>
+            </form>
+
+            <div class="table-responsive" style="margin-top: 1rem;">
+                <table class="rasikh-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الحلقة</th>
+                            <th>المسجد</th>
+                            <th>المعلم</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="circlesTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- حاوية الإشعارات الأنيقة أسفل الشاشة -->
+    <div id="rasikhToast" class="rasikh-toast"></div>
+
+    <!-- استدعاء ملف البرمجة الخاص بلوحة التحكم -->
+    <script src="../assets/js/dashboard.js"></script>
+</body>
+</html>
