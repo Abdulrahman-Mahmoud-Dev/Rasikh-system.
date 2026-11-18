@@ -2,42 +2,67 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>نظام راسخ | الرئيسية وإدارة الحلقات</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&family=Amiri:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
 <body class="app-body">
 
+    <!-- الأيقونات -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-mosque" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3"/><path d="M5 21v-8a7 7 0 0 1 14 0v8"/><path d="M3 21h18"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></symbol>
+            <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+            <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M11 20V4M17 20v-6M3 20h18"/></symbol>
+            <symbol id="i-more" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></symbol>
+            <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+            <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+            <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+            <symbol id="i-student" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></symbol>
+            <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></symbol>
+            <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+            <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol>
+            <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 8l4 4-4 4M20 12H9"/></symbol>
+            <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></symbol>
+            <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+            <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+            <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+            <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+        </defs>
+    </svg>
+
     <!-- =====================================================================
-         [1] الترويسة الملكية المقوسة بزخارف المساجد
+         [1] الترويسة
          ===================================================================== -->
     <header class="app-header">
         <div class="mosque-silhouette-bg"></div>
 
         <div class="app-header-top">
             <div class="user-welcome-box">
-                <img src="../1794918114340.jpg" alt="شعار راسخ" class="header-avatar">
-                <div>
-                    <span class="welcome-label">أهلاً بك في نظام راسخ</span>
-                    <div class="welcome-name" id="headerUserName">عبدالرحمن عبدالقادر</div>
+                <div class="header-avatar-ring">
+                    <img src="../1794918114340.jpg" alt="شعار راسخ" class="header-avatar">
+                </div>
+                <div style="min-width:0;">
+                    <span class="welcome-label">أهلا بك في نظام راسخ</span>
+                    <div class="welcome-name" id="headerUserName">مستخدم راسخ</div>
                 </div>
             </div>
 
             <div class="today-date-box">
-                <span class="today-title">📅 تاريخ اليوم</span>
+                <span class="today-title"><svg><use href="#i-calendar"/></svg>تاريخ اليوم</span>
                 <div class="today-value" id="todayFormattedDate">1448 هـ</div>
             </div>
         </div>
 
-        <!-- شريط اختيار العام والشهر -->
         <div class="period-pill-bar">
             <div style="display:flex; align-items:center; gap:0.4rem;">
-                <select id="hijriYearSelect" class="period-select-mini" onchange="changeActivePeriod()"></select>
-                <select id="hijriMonthSelect" class="period-select-mini" onchange="changeActivePeriod()">
+                <select id="hijriYearSelect" class="period-select-mini" onchange="changeActivePeriod()" aria-label="العام الهجري"></select>
+                <select id="hijriMonthSelect" class="period-select-mini" onchange="changeActivePeriod()" aria-label="الشهر الهجري">
                     <option value="محرم">محرم</option>
                     <option value="صفر">صفر</option>
                     <option value="ربيع الأول">ربيع الأول</option>
@@ -52,26 +77,27 @@
                     <option value="ذو الحجة">ذو الحجة</option>
                 </select>
             </div>
-            <button type="button" class="btn-gold-mini" onclick="addNewHijriYear()">+ عام جديد</button>
+            <button type="button" class="btn-gold-mini" onclick="addNewHijriYear()">
+                <svg><use href="#i-plus"/></svg>عام جديد
+            </button>
         </div>
     </header>
 
     <!-- =====================================================================
-         [2] المحتوى الرئيسي المتبدل حسب شريط التنقل السفلي
+         [2] المحتوى الرئيسي
          ===================================================================== -->
     <main class="app-main">
 
-        <!-- التبويب (1): الرئيسية - المجمعات / المساجد -->
+        <!-- الرئيسية: المجمعات / المساجد -->
         <section id="viewHome" class="view-section active">
             <div class="section-heading-row">
                 <h2>المجمعات / المساجد</h2>
                 <span class="count-pill" id="homeMosquesBadge">0 مسجد</span>
             </div>
-
             <div id="mosquesCardsContainer"></div>
         </section>
 
-        <!-- التبويب (2): الحلقات القرآنية -->
+        <!-- الحلقات القرآنية -->
         <section id="viewCircles" class="view-section">
             <div class="section-heading-row">
                 <h2>الحلقات القرآنية</h2>
@@ -79,14 +105,15 @@
             </div>
 
             <div class="search-input-wrap">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="circleSearchInput" placeholder="البحث عن حلقة أو معلم..." oninput="renderCirclesCards()">
+                <svg class="search-icon"><use href="#i-search"/></svg>
+                <input type="text" id="circleSearchInput" placeholder="ابحث عن حلقة أو معلم" oninput="renderCirclesCards()">
             </div>
 
+            <div id="circlesFilterChip"></div>
             <div id="circlesCardsContainer"></div>
         </section>
 
-        <!-- التبويب (3): الإحصائيات العامة -->
+        <!-- الإحصائيات -->
         <section id="viewStats" class="view-section">
             <div class="section-heading-row">
                 <h2>إحصائيات النظام</h2>
@@ -98,31 +125,29 @@
                     <div class="kpi-label">المجمعات / المساجد</div>
                     <div class="kpi-number" id="statMosquesCount">0</div>
                 </div>
-
                 <div class="kpi-box emerald">
                     <div class="kpi-label">الحلقات القرآنية</div>
                     <div class="kpi-number" id="statCirclesCount">0</div>
                 </div>
-
                 <div class="kpi-box gold">
                     <div class="kpi-label">إجمالي الطلاب</div>
                     <div class="kpi-number" id="statStudentsCount">0</div>
                 </div>
-
                 <div class="kpi-box">
                     <div class="kpi-label">الشهر النشط</div>
-                    <div class="kpi-number" id="statActiveMonth" style="font-size:1.25rem;">محرم</div>
+                    <div class="kpi-number small" id="statActiveMonth">محرم</div>
                 </div>
             </div>
 
-            <div style="margin-top: 1.25rem;">
-                <a href="reports.html" class="btn-primary" style="display:block; text-align:center; text-decoration:none;">
-                    📊 فتح التقارير الشهرية وفهرس الطلاب
+            <div class="stats-link">
+                <a href="reports.html" class="btn-primary">
+                    <svg class="ic-svg" style="color:var(--gold-light);"><use href="#i-report"/></svg>
+                    <span>فتح التقارير الشهرية وفهرس الطلاب</span>
                 </a>
             </div>
         </section>
 
-        <!-- التبويب (4): المزيد والإعدادات -->
+        <!-- المزيد -->
         <section id="viewMore" class="view-section">
             <div class="section-heading-row">
                 <h2>الحساب والإعدادات</h2>
@@ -130,155 +155,165 @@
 
             <div class="menu-list-card" onclick="openSheet('sheetAssociation')">
                 <div class="menu-list-right">
-                    <span class="menu-icon-badge">🏛️</span>
+                    <span class="menu-icon-badge"><svg class="ic-svg"><use href="#i-building"/></svg></span>
                     <div>
                         <div>بيانات الجمعية / الجهة المشرفة</div>
-                        <small id="assocSubtitle" style="color:var(--text-muted); font-weight:600;">اضغط لتعديل الاسم والمشرف</small>
+                        <small class="menu-sub" id="assocSubtitle">اضغط لتعديل الاسم والمشرف</small>
                     </div>
                 </div>
-                <span>‹</span>
+                <svg class="menu-chev"><use href="#i-chev"/></svg>
             </div>
 
             <div class="menu-list-card" onclick="window.location.href='students.html'">
                 <div class="menu-list-right">
-                    <span class="menu-icon-badge">👨‍🎓</span>
+                    <span class="menu-icon-badge"><svg class="ic-svg"><use href="#i-student"/></svg></span>
                     <span>إدارة الطلاب والمتابعة اليومية</span>
                 </div>
-                <span>‹</span>
+                <svg class="menu-chev"><use href="#i-chev"/></svg>
             </div>
 
             <div class="menu-list-card" onclick="window.location.href='reports.html'">
                 <div class="menu-list-right">
-                    <span class="menu-icon-badge">📑</span>
+                    <span class="menu-icon-badge"><svg class="ic-svg"><use href="#i-report"/></svg></span>
                     <span>التقارير والفهرس المعتمد</span>
                 </div>
-                <span>‹</span>
+                <svg class="menu-chev"><use href="#i-chev"/></svg>
             </div>
 
             <div class="menu-list-card" onclick="exportBackupJson()">
                 <div class="menu-list-right">
-                    <span class="menu-icon-badge">💾</span>
+                    <span class="menu-icon-badge"><svg class="ic-svg"><use href="#i-download"/></svg></span>
                     <span>نسخ احتياطي للبيانات (تصدير ملف)</span>
                 </div>
-                <span>‹</span>
+                <svg class="menu-chev"><use href="#i-chev"/></svg>
             </div>
 
-            <div class="menu-list-card" onclick="logoutUser()" style="color:#DC2626; border-color:#FECACA;">
+            <div class="menu-list-card danger" onclick="logoutUser()">
                 <div class="menu-list-right">
-                    <span class="menu-icon-badge" style="background:#FEE2E2; color:#DC2626;">🚪</span>
+                    <span class="menu-icon-badge"><svg class="ic-svg"><use href="#i-logout"/></svg></span>
                     <span>تسجيل الخروج</span>
                 </div>
-                <span>‹</span>
+                <svg class="menu-chev"><use href="#i-chev"/></svg>
             </div>
         </section>
     </main>
 
     <!-- =====================================================================
-         [3] شريط التنقل السفلي الثابت مع زر (+) العائم
+         [3] شريط التنقل السفلي
          ===================================================================== -->
     <nav class="bottom-nav-bar">
         <button type="button" class="bottom-nav-item active" id="navHome" onclick="switchBottomTab('Home')">
-            <span class="nav-ico">🕌</span>
+            <span class="nav-ico"><svg><use href="#i-mosque"/></svg></span>
             <span>الرئيسية</span>
         </button>
 
         <button type="button" class="bottom-nav-item" id="navCircles" onclick="switchBottomTab('Circles')">
-            <span class="nav-ico">📖</span>
-            <span>حلقات</span>
+            <span class="nav-ico"><svg><use href="#i-book"/></svg></span>
+            <span>الحلقات</span>
         </button>
 
         <div class="fab-wrapper">
-            <button type="button" class="fab-add-btn" onclick="openSheet('sheetQuickAdd')" aria-label="إضافة جديدة">+</button>
+            <button type="button" class="fab-add-btn" onclick="openSheet('sheetQuickAdd')" aria-label="إضافة جديدة">
+                <svg><use href="#i-plus"/></svg>
+            </button>
         </div>
 
         <button type="button" class="bottom-nav-item" id="navStats" onclick="switchBottomTab('Stats')">
-            <span class="nav-ico">📊</span>
+            <span class="nav-ico"><svg><use href="#i-chart"/></svg></span>
             <span>الإحصائيات</span>
         </button>
 
         <button type="button" class="bottom-nav-item" id="navMore" onclick="switchBottomTab('More')">
-            <span class="nav-ico">•••</span>
+            <span class="nav-ico"><svg><use href="#i-more"/></svg></span>
             <span>المزيد</span>
         </button>
     </nav>
 
     <!-- =====================================================================
-         [4] القوائم المنبثقة من الأسفل (Bottom Sheets)
+         [4] النوافذ المنبثقة
          ===================================================================== -->
 
-    <!-- قائمة زر (+) السريعة -->
+    <!-- الإضافة السريعة -->
     <div id="sheetQuickAdd" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetQuickAdd')">
         <div class="bottom-sheet-box">
             <div class="sheet-handle"></div>
-            <div class="sheet-title">إضافة سريعة للنظام</div>
+            <div class="sheet-title">إضافة سريعة</div>
             <button type="button" class="sheet-action-btn" onclick="closeSheet('sheetQuickAdd'); openSheet('sheetAddMosque')">
-                <span>🕌 إنشاء مجمع / مسجد جديد</span>
-                <span>+</span>
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-mosque"/></svg>إنشاء مجمع / مسجد جديد</span>
+                <svg class="chev"><use href="#i-chev"/></svg>
             </button>
             <button type="button" class="sheet-action-btn" onclick="closeSheet('sheetQuickAdd'); openAddCircleModal()">
-                <span>📖 إنشاء حلقة قرآنية جديدة</span>
-                <span>+</span>
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-book"/></svg>إنشاء حلقة قرآنية جديدة</span>
+                <svg class="chev"><use href="#i-chev"/></svg>
             </button>
             <button type="button" class="sheet-action-btn" onclick="closeSheet('sheetQuickAdd'); window.location.href='students.html'">
-                <span>👨‍🎓 إضافة ومتابعة الطلاب</span>
-                <span>‹</span>
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-student"/></svg>إضافة ومتابعة الطلاب</span>
+                <svg class="chev"><use href="#i-chev"/></svg>
             </button>
         </div>
     </div>
 
-    <!-- نافذة إضافة مسجد -->
+    <!-- إضافة مسجد -->
     <div id="sheetAddMosque" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetAddMosque')">
         <div class="bottom-sheet-box">
             <div class="sheet-handle"></div>
             <div class="sheet-title">إضافة مسجد / مجمع جديد</div>
             <form id="mosqueForm" onsubmit="addMosque(event)">
-                <div class="form-group">
-                    <label class="form-label">اسم المسجد / الجامع</label>
-                    <input type="text" id="mosqueName" class="form-input" placeholder="مثال: جامع أسامة بن زيد" required>
+                <div class="field">
+                    <label for="mosqueName">اسم المسجد / الجامع</label>
+                    <svg class="ic"><use href="#i-mosque"/></svg>
+                    <input type="text" id="mosqueName" placeholder="مثال: جامع أسامة بن زيد" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">الحي / الموقع (اختياري)</label>
-                    <input type="text" id="mosqueDistrict" class="form-input" placeholder="مثال: الوزيرية">
+                <div class="field">
+                    <label for="mosqueDistrict">الحي / الموقع (اختياري)</label>
+                    <svg class="ic"><use href="#i-pin"/></svg>
+                    <input type="text" id="mosqueDistrict" placeholder="مثال: الوزيرية">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">مشرف المسجد</label>
-                    <input type="text" id="mosqueSupervisor" class="form-input" placeholder="اسم مشرف المسجد" required>
+                <div class="field">
+                    <label for="mosqueSupervisor">مشرف المسجد</label>
+                    <svg class="ic"><use href="#i-user"/></svg>
+                    <input type="text" id="mosqueSupervisor" placeholder="اسم مشرف المسجد" required>
                 </div>
                 <button type="submit" class="btn-emerald">حفظ المسجد</button>
             </form>
         </div>
     </div>
 
-    <!-- نافذة إضافة حلقة -->
+    <!-- إضافة حلقة -->
     <div id="sheetAddCircle" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetAddCircle')">
         <div class="bottom-sheet-box">
             <div class="sheet-handle"></div>
             <div class="sheet-title">إنشاء حلقة قرآنية</div>
             <form id="circleForm" onsubmit="addCircle(event)">
-                <div class="form-group">
-                    <label class="form-label">المسجد التابع له</label>
-                    <select id="circleMosqueSelect" class="form-input" required></select>
+                <div class="field">
+                    <label for="circleMosqueSelect">المسجد التابع له</label>
+                    <svg class="ic"><use href="#i-mosque"/></svg>
+                    <select id="circleMosqueSelect" required></select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">اسم الحلقة</label>
-                    <input type="text" id="circleName" class="form-input" placeholder="مثال: حلقة أبي بكر الصديق" required>
+                <div class="field">
+                    <label for="circleName">اسم الحلقة</label>
+                    <svg class="ic"><use href="#i-book"/></svg>
+                    <input type="text" id="circleName" placeholder="مثال: حلقة أبي بكر الصديق" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">اسم المعلم</label>
-                    <input type="text" id="circleTeacher" class="form-input" placeholder="اسم معلم الحلقة" required>
+                <div class="field">
+                    <label for="circleTeacher">اسم المعلم</label>
+                    <svg class="ic"><use href="#i-user"/></svg>
+                    <input type="text" id="circleTeacher" placeholder="اسم معلم الحلقة" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">توقيت الحلقة</label>
-                    <select id="circleTime" class="form-input">
+                <div class="field">
+                    <label for="circleTime">توقيت الحلقة</label>
+                    <svg class="ic"><use href="#i-clock"/></svg>
+                    <select id="circleTime">
                         <option value="الفجر">الفجر</option>
                         <option value="العصر">العصر</option>
                         <option value="المغرب" selected>المغرب</option>
                         <option value="العشاء">العشاء</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">نوع الحلقة</label>
-                    <select id="circleType" class="form-input">
+                <div class="field">
+                    <label for="circleType">نوع الحلقة</label>
+                    <svg class="ic"><use href="#i-book"/></svg>
+                    <select id="circleType">
                         <option value="حفظ ومراجعة" selected>حفظ ومراجعة</option>
                         <option value="تلقين وتأسيس">تلقين وتأسيس</option>
                         <option value="تصحيح تلاوة">تصحيح تلاوة</option>
@@ -289,46 +324,59 @@
         </div>
     </div>
 
-    <!-- نافذة خيارات المسجد (عند الضغط على ⋮) -->
+    <!-- خيارات المسجد -->
     <div id="sheetMosqueActions" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetMosqueActions')">
         <div class="bottom-sheet-box">
             <div class="sheet-handle"></div>
             <div class="sheet-title" id="selectedMosqueTitle">خيارات المسجد</div>
             <button type="button" class="sheet-action-btn" onclick="filterCirclesBySelectedMosque()">
-                <span>📖 عرض حلقات هذا المسجد</span>
-                <span>‹</span>
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-book"/></svg>عرض حلقات هذا المسجد</span>
+                <svg class="chev"><use href="#i-chev"/></svg>
             </button>
             <button type="button" class="sheet-action-btn" onclick="closeSheet('sheetMosqueActions'); window.location.href='reports.html'">
-                <span>📊 إنشاء التقارير</span>
-                <span>‹</span>
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-report"/></svg>إنشاء التقارير</span>
+                <svg class="chev"><use href="#i-chev"/></svg>
             </button>
-            <button type="button" class="sheet-action-btn danger" onclick="confirmDeleteSelectedMosque()">
-                <span>🗑️ حذف المسجد وحلقاته</span>
-                <span>×</span>
+            <button type="button" class="sheet-action-btn danger" onclick="requestDeleteSelectedMosque()">
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-trash"/></svg>حذف المسجد وحلقاته</span>
             </button>
         </div>
     </div>
 
-    <!-- نافذة بيانات الجمعية -->
+    <!-- بيانات الجمعية -->
     <div id="sheetAssociation" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetAssociation')">
         <div class="bottom-sheet-box">
             <div class="sheet-handle"></div>
             <div class="sheet-title">بيانات الجمعية / الجهة المشرفة</div>
             <form id="associationForm" onsubmit="saveAssociationInfo(event)">
-                <div class="form-group">
-                    <label class="form-label">اسم الجمعية أو الجهة</label>
-                    <input type="text" id="assocName" class="form-input" placeholder="مثال: جمعية تحفيظ القرآن الكريم" required>
+                <div class="field">
+                    <label for="assocName">اسم الجمعية أو الجهة</label>
+                    <svg class="ic"><use href="#i-building"/></svg>
+                    <input type="text" id="assocName" placeholder="مثال: جمعية تحفيظ القرآن الكريم" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">اسم المشرف العام</label>
-                    <input type="text" id="assocManager" class="form-input" placeholder="اسم المشرف العام" required>
+                <div class="field">
+                    <label for="assocManager">اسم المشرف العام</label>
+                    <svg class="ic"><use href="#i-user"/></svg>
+                    <input type="text" id="assocManager" placeholder="اسم المشرف العام" required>
                 </div>
                 <button type="submit" class="btn-primary">حفظ البيانات</button>
             </form>
         </div>
     </div>
 
-    <!-- حاوية الإشعارات -->
+    <!-- تأكيد الحذف -->
+    <div id="sheetConfirm" class="sheet-backdrop" onclick="closeSheetOnBackdrop(event, 'sheetConfirm')">
+        <div class="bottom-sheet-box">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title" id="confirmTitle">تأكيد</div>
+            <p class="sheet-text" id="confirmText"></p>
+            <button type="button" class="sheet-action-btn danger" onclick="runConfirmedAction()">
+                <span class="sheet-action-label"><svg class="ic-svg"><use href="#i-trash"/></svg>نعم، احذف</span>
+            </button>
+            <button type="button" class="btn-outline" onclick="closeSheet('sheetConfirm')">إلغاء</button>
+        </div>
+    </div>
+
     <div id="rasikhToast" class="rasikh-toast"></div>
 
     <script src="../assets/js/dashboard.js"></script>
