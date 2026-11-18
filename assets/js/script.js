@@ -152,25 +152,61 @@ function goToVerifyScreen() {
 }
 
 /* ==========================================================================
-   [6] خانات الرمز (إدخال تلقائي، حذف، لصق) ومؤقت إعادة الإرسال
+   [6] خانات الرمز: كتابة، حذف، لصق، تعبئة تلقائية، وضغط حر على أي خانة
    ========================================================================== */
 const otpBoxes = Array.from(document.querySelectorAll('.otp-digit'));
 
+// توزيع أرقام (من لصق أو تعبئة تلقائية) على الخانات
+function distributeDigits(startIndex, rawText) {
+    const digits = (rawText || '').replace(/\D/g, '');
+    if (!digits) return;
+
+    // رمز كامل يبدأ دائما من أول خانة، أيا كانت الخانة التي لصقت فيها
+    const from = digits.length >= otpBoxes.length ? 0 : startIndex;
+    digits.slice(0, otpBoxes.length - from).split('').forEach((d, k) => {
+        otpBoxes[from + k].value = d;
+    });
+
+    const last = Math.min(from + digits.length, otpBoxes.length - 1);
+    otpBoxes[last].focus();
+}
+
 otpBoxes.forEach((box, i) => {
+    // إزالة حد الخانة الواحدة حتى لا يقص المتصفح الرمز الملصوق
+    box.removeAttribute('maxlength');
+
+    // الضغط على أي خانة يحدد محتواها ليسهل استبداله
+    box.addEventListener('focus', () => box.select());
+    box.addEventListener('click', () => box.select());
+
     box.addEventListener('input', () => {
-        box.value = box.value.replace(/\D/g, '').slice(-1);
+        const digits = box.value.replace(/\D/g, '');
+
+        if (digits.length >= OTP_LENGTH) {
+            distributeDigits(i, digits);          // لصق أو تعبئة كيبورد للرمز كاملا
+            return;
+        }
+
+        box.value = digits.slice(-1);             // رقم واحد فقط في الخانة
         if (box.value && i < otpBoxes.length - 1) otpBoxes[i + 1].focus();
     });
 
     box.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !box.value && i > 0) otpBoxes[i - 1].focus();
+        if (e.key === 'Backspace' && !box.value && i > 0) {
+            otpBoxes[i - 1].value = '';
+            otpBoxes[i - 1].focus();
+        } else if (e.key === 'ArrowLeft' && i > 0) {
+            otpBoxes[i - 1].focus();
+        } else if (e.key === 'ArrowRight' && i < otpBoxes.length - 1) {
+            otpBoxes[i + 1].focus();
+        } else if (e.key === 'Enter') {
+            verifyOtpCode();
+        }
     });
 
     box.addEventListener('paste', (e) => {
         e.preventDefault();
-        const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, otpBoxes.length);
-        digits.split('').forEach((d, k) => { otpBoxes[k].value = d; });
-        otpBoxes[Math.min(digits.length, otpBoxes.length - 1)].focus();
+        distributeDigits(i, e.clipboardData.getData('text'));
     });
 });
 
