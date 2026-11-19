@@ -1,3 +1,5 @@
+
+import fp from "fastify-plugin";
 import { Pool } from "pg";
 import type { FastifyPluginAsync } from "fastify";
 
@@ -28,4 +30,6 @@ const databasePlugin: FastifyPluginAsync = async (app) => {
   });
 };
 
-export default databasePlugin;
+export default fp(databasePlugin, {
+  name: "database",
+});
