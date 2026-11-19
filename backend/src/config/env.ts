@@ -1,4 +1,6 @@
 
+import "dotenv/config";
+
 import { z } from "zod";
 
 const booleanFromString = z
