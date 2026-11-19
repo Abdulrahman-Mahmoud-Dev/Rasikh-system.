@@ -46,7 +46,13 @@ app.register(healthRoute);
   
   // Centralized error handling
   app.setErrorHandler((error, request, reply) => {
-    const statusCode = error.statusCode ?? 500;
+    const statusCode =
+  typeof error === "object" &&
+  error !== null &&
+  "statusCode" in error &&
+  typeof error.statusCode === "number"
+    ? error.statusCode
+    : 500;
     const isServerError = statusCode >= 500;
 
     if (isServerError) {
