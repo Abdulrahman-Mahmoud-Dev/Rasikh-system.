@@ -5,10 +5,9 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
-
 import { env } from "./config/env.js";
-
 import healthRoute from "./routes/health.js";
+import databasePlugin from "./plugins/database.js";
 
 export function buildApp() {
   const app = Fastify({
@@ -42,6 +41,7 @@ export function buildApp() {
     timeWindow: "1 minute",
   });
 
+app.register(databasePlugin);
 app.register(healthRoute);
   
   // Centralized error handling
