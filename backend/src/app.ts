@@ -8,6 +8,8 @@ import rateLimit from "@fastify/rate-limit";
 
 import { env } from "./config/env.js";
 
+import healthRoute from "./routes/health.js";
+
 export function buildApp() {
   const app = Fastify({
     logger: {
@@ -40,6 +42,8 @@ export function buildApp() {
     timeWindow: "1 minute",
   });
 
+app.register(healthRoute);
+  
   // Centralized error handling
   app.setErrorHandler((error, request, reply) => {
     const statusCode = error.statusCode ?? 500;
