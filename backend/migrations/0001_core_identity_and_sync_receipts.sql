@@ -188,7 +188,7 @@ CREATE TABLE public.students (
   association_id uuid NOT NULL,
   person_id uuid NOT NULL,
   status text NOT NULL DEFAULT 'active'
-    CHECK (status IN ('active', 'inactive', 'archived')),
+    CHECK (status IN ('active', 'inactive')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
 
