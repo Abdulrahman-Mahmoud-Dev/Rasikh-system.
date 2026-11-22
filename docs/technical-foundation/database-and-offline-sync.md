@@ -33,6 +33,36 @@
 | التعليم | جلسات الحضور وسجلاته، وسجلات التسميع والتقييم وفق القواعد التعليمية المعتمدة. تُحفظ التصحيحات والتغييرات في سجل تدقيق. |
 | المزامنة | تعريف تثبيت/جهاز المتصفح عند الحاجة، ومعرّف فريد لكل عملية محلية، وحالة المزامنة ووقت الاستلام ونتيجة المعالجة. |
 
+
+### العلاقات المقترحة — رسم أولي
+
+الرسم يوضح اتجاه العلاقات فقط، ولا يفرض أسماء الجداول النهائية أو أعمدتها:
+
+```mermaid
+erDiagram
+    ASSOCIATION ||--o{ BRANCH : includes
+    BRANCH ||--o{ QURANIC_PREMISE : contains
+    QURANIC_PREMISE ||--o{ CIRCLE : hosts
+    PERSON ||--o| USER_ACCOUNT : may_have
+    PERSON ||--o{ MEMBERSHIP : holds
+    MEMBERSHIP ||--o{ ROLE_ASSIGNMENT : grants
+    PERSON ||--o| STUDENT_PROFILE : may_be
+    PERSON ||--o{ GUARDIAN_STUDENT_LINK : guardian
+    STUDENT_PROFILE ||--o{ GUARDIAN_STUDENT_LINK : child
+    CIRCLE ||--o{ ENROLLMENT : has
+    STUDENT_PROFILE ||--o{ ENROLLMENT : history
+    CIRCLE ||--o{ LEARNING_SESSION : schedules
+    LEARNING_SESSION ||--o{ ATTENDANCE_RECORD : records
+    STUDENT_PROFILE ||--o{ ATTENDANCE_RECORD : attends
+    STUDENT_PROFILE ||--o{ RECITATION_RECORD : recites
+    LEARNING_SESSION ||--o{ RECITATION_RECORD : records
+    USER_ACCOUNT ||--o{ SYNC_OPERATION : submits
+```
+
+- لا يوجد كيان مستقل باسم «مركز» أو جدول منفصل للمسجد؛ الكيان هو المقر القرآني.
+- انتقال الطالب بين الحلقات يُسجل كفترات تسجيل تاريخية، لا بتغيير صامت يمحو الحلقة السابقة.
+- تُراجع علاقة سجلات التسميع بجلسات الحلقة وقواعد التقييم قبل تثبيت الأعمدة والقيود.
+
 ### قواعد سلامة البيانات
 
 - لكل سجل نطاق جهة واضح؛ ويُشتق نطاق الوصول من عضوية المستخدم وصلاحياته على الخادم، لا من قيمة يرسلها المتصفح وحده.
