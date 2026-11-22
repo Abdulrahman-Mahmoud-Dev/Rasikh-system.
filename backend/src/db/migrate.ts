@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Pool, type PoolClient } from "pg";
@@ -66,7 +67,7 @@ const loadMigrations = async (): Promise<MigrationFile[]> => {
   return Promise.all(
     sqlFilenames.map(async (filename) => {
       const contents = await readFile(
-        new URL(filename, `file:///${migrationDirectory.replaceAll("\\", "/")}/`),
+        join(migrationDirectory, filename),
         "utf8",
       );
 
