@@ -94,6 +94,8 @@ CREATE TABLE public.association_memberships (
   person_id uuid NOT NULL,
   status text NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'active', 'suspended', 'ended')),
+  valid_from timestamptz NOT NULL DEFAULT now(),
+  valid_until timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
 
@@ -111,7 +113,10 @@ CREATE TABLE public.association_memberships (
     UNIQUE (association_id, person_id),
 
   CONSTRAINT memberships_id_association_person_unique
-    UNIQUE (id, association_id, person_id)
+    UNIQUE (id, association_id, person_id),
+
+  CONSTRAINT memberships_validity_check
+    CHECK (valid_until IS NULL OR valid_until > valid_from)
 );
 
 -- role_code stays open until the detailed role/permission matrix is approved.
