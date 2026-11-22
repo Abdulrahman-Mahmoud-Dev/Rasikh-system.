@@ -186,11 +186,15 @@ function openMosqueOptions(mosqueId) {
 }
 
 // عرض حلقات المسجد المحدد فقط
-function filterCirclesBySelectedMosque() {
-    circleMosqueFilterId = activeMosqueActionId;
-    closeSheet('sheetMosqueActions');
+function openMosqueCircles(mosqueId) {
+    circleMosqueFilterId = mosqueId;
     renderCirclesCards();
     switchBottomTab('Circles');
+}
+
+function filterCirclesBySelectedMosque() {
+    closeSheet('sheetMosqueActions');
+    openMosqueCircles(activeMosqueActionId);
 }
 
 function clearMosqueFilter() {
@@ -203,18 +207,22 @@ function requestDeleteSelectedMosque() {
     if (!mosque) return;
     const mosqueId = mosque.id;
     closeSheet('sheetMosqueActions');
-    askConfirm('حذف المسجد', `سيتم حذف (${mosque.name}) وكل حلقاته. هل تريد المتابعة؟`, () => deleteMosque(mosqueId));
+    askConfirm('حذف المسجد', `سيتم حذف (${mosque.name}) وكل حلقاته وطلابه المسجلين فيها. هل تريد المتابعة؟`, () => deleteMosque(mosqueId));
 }
 
 function deleteMosque(mosqueId) {
     const data = getSystemData();
+    const removedCircleIds = new Set(
+        data.circles.filter(c => c.mosqueId === mosqueId).map(c => c.id)
+    );
     data.mosques = data.mosques.filter(m => m.id !== mosqueId);
     data.circles = data.circles.filter(c => c.mosqueId !== mosqueId);
+    data.students = data.students.filter(s => !removedCircleIds.has(s.circleId));
     saveSystemData(data);
 
     if (circleMosqueFilterId === mosqueId) circleMosqueFilterId = null;
     renderAllDashboard();
-    showToast('تم حذف المسجد وحلقاته المرتبطة');
+    showToast('تم حذف المسجد وحلقاته وطلابه المرتبطين');
 }
 
 function renderMosquesCards() {
@@ -238,7 +246,7 @@ function renderMosquesCards() {
         const circlesCount = data.circles.filter(c => c.mosqueId === m.id).length;
         return `
             <div class="item-card">
-                <div class="item-card-right" onclick="switchBottomTab('Circles')">
+                <div class="item-card-right" onclick="openMosqueCircles('${m.id}')">
                     <div class="mosque-icon-circle">${icon('mosque')}</div>
                     <div>
                         <div class="item-title">${esc(m.name)}</div>
@@ -297,15 +305,16 @@ function addCircle(event) {
 function requestDeleteCircle(circleId) {
     const circle = getSystemData().circles.find(c => c.id === circleId);
     if (!circle) return;
-    askConfirm('حذف الحلقة', `سيتم حذف (${circle.name}). هل تريد المتابعة؟`, () => deleteCircle(circleId));
+    askConfirm('حذف الحلقة', `سيتم حذف (${circle.name}) وطلابها المسجلين فيها. هل تريد المتابعة؟`, () => deleteCircle(circleId));
 }
 
 function deleteCircle(circleId) {
     const data = getSystemData();
     data.circles = data.circles.filter(c => c.id !== circleId);
+    data.students = data.students.filter(s => s.circleId !== circleId);
     saveSystemData(data);
     renderAllDashboard();
-    showToast('تم حذف الحلقة بنجاح');
+    showToast('تم حذف الحلقة وطلابها المرتبطين بنجاح');
 }
 
 function renderCirclesCards() {
@@ -350,10 +359,12 @@ function renderCirclesCards() {
         const mosqueName = mosque ? mosque.name : 'غير محدد';
         const studentsCount = data.students.filter(s => s.circleId === c.id).length;
 
+        const studentsUrl = `students.html?circleId=${encodeURIComponent(c.id)}`;
+
         return `
             <div class="circle-card">
                 <div class="circle-card-header">
-                    <div style="cursor:pointer;" onclick="window.location.href='students.html'">
+                    <div style="cursor:pointer;" onclick="window.location.href='${studentsUrl}'">
                         <div class="item-title">${esc(c.name)} <span class="circle-count">(${studentsCount} طالب)</span></div>
                     </div>
                     <button type="button" class="more-dots-btn danger" onclick="requestDeleteCircle('${c.id}')" aria-label="حذف الحلقة">${icon('trash')}</button>
@@ -367,7 +378,7 @@ function renderCirclesCards() {
                     <span class="day-chip">الخميس</span>
                 </div>
 
-                <div class="circle-meta-list" onclick="window.location.href='students.html'">
+                <div class="circle-meta-list" onclick="window.location.href='${studentsUrl}'">
                     <div>التوقيت: <strong>${esc(c.time || 'المغرب')}</strong> • المعلم: <strong>${esc(c.teacher)}</strong></div>
                     <div>المسجد: <strong>${esc(mosqueName)}</strong></div>
                     <div>نوع الحلقة: <strong>${esc(c.type || 'حفظ ومراجعة')}</strong></div>
