@@ -14,13 +14,23 @@ const defaultData = {
     students: []
 };
 
+function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
+
 function getSystemData() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
         return JSON.parse(JSON.stringify(defaultData));
     }
-    return JSON.parse(saved);
+    try {
+        return JSON.parse(saved);
+    } catch (e) {
+        return JSON.parse(JSON.stringify(defaultData));
+    }
 }
 
 function saveSystemData(data) {
@@ -55,7 +65,7 @@ function renderPeriodControls() {
     const monthSelect = document.getElementById('hijriMonthSelect');
 
     yearSelect.innerHTML = data.years
-        .map(year => `<option value="${year}" ${year === data.activeYear ? 'selected' : ''}>${year}</option>`)
+        .map(year => `<option value="${esc(year)}" ${year === data.activeYear ? 'selected' : ''}>${esc(year)}</option>`)
         .join('');
 
     monthSelect.value = data.activeMonth;
@@ -98,7 +108,7 @@ function populateReportFilters() {
     const mosqueSelect = document.getElementById('reportMosqueFilter');
 
     mosqueSelect.innerHTML = `<option value="all">جميع المساجد</option>` +
-        data.mosques.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        data.mosques.map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
 
     updateCircleFilterOptions();
 }
@@ -113,7 +123,7 @@ function updateCircleFilterOptions() {
         : data.circles.filter(c => c.mosqueId === selectedMosque);
 
     circleSelect.innerHTML = `<option value="all">جميع الحلقات</option>` +
-        availableCircles.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        availableCircles.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
 }
 
 function onMosqueFilterChange() {
@@ -168,14 +178,14 @@ function renderReportTable() {
             return `
                 <tr>
                     <td>${index + 1}</td>
-                    <td><strong>${student.name}</strong></td>
-                    <td>${mosqueName}</td>
-                    <td>${circleName}</td>
-                    <td>${student.prevJuz || 0} جزء</td>
-                    <td>${rec.attendance} يوم</td>
-                    <td>${rec.memPages} صفحة</td>
-                    <td>${rec.revPages} صفحة</td>
-                    <td><strong>${rec.grade}</strong></td>
+                    <td><strong>${esc(student.name)}</strong></td>
+                    <td>${esc(mosqueName)}</td>
+                    <td>${esc(circleName)}</td>
+                    <td>${Number(student.prevJuz) || 0} جزء</td>
+                    <td>${Number(rec.attendance) || 0} يوم</td>
+                    <td>${Number(rec.memPages) || 0} صفحة</td>
+                    <td>${Number(rec.revPages) || 0} صفحة</td>
+                    <td><strong>${esc(rec.grade)}</strong></td>
                 </tr>
             `;
         }).join('');
@@ -255,9 +265,14 @@ function triggerRestoreBackup() {
    ========================================================================== */
 function loadCurrentUser() {
     const userRaw = localStorage.getItem('rasikh_current_user');
-    if (userRaw) {
+    if (!userRaw) return;
+    try {
         const user = JSON.parse(userRaw);
-        document.getElementById('currentUserBadge').textContent = user.name;
+        if (user?.name) {
+            document.getElementById('currentUserBadge').textContent = user.name;
+        }
+    } catch (e) {
+        /* تجاهل بيانات مستخدم تالفة */
     }
 }
 
