@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: rasikh-postgres-dev
+    environment:
+      POSTGRES_DB: rasikh_dev
+      POSTGRES_USER: rasikh_app
+      POSTGRES_PASSWORD: rasikh_dev_local_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - rasikh_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rasikh_app -d rasikh_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rasikh_pg_data:
