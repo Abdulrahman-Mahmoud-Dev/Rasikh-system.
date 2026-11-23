@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -43,6 +43,7 @@ describe.skipIf(!testDatabaseUrl)(
     it("aborts if an already-applied migration checksum is modified", async () => {
       const tempDir = await mkdtemp(join(tmpdir(), "rasikh-mig-check-"));
       try {
+        await cp(DEFAULT_MIGRATION_DIR, tempDir, { recursive: true });
         await writeFile(
           join(tempDir, "0001_core_identity_and_hierarchy.sql"),
           "-- tampered SQL\nSELECT 1;",
@@ -52,6 +53,23 @@ describe.skipIf(!testDatabaseUrl)(
         await expect(
           runMigrations(pool, { migrationDir: tempDir }),
         ).rejects.toThrow(/modified/i);
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it("aborts if an already-applied migration file is missing", async () => {
+      const tempDir = await mkdtemp(join(tmpdir(), "rasikh-mig-missing-"));
+      try {
+        await writeFile(
+          join(tempDir, "0001_core_identity_and_hierarchy.sql"),
+          "-- partial folder\nSELECT 1;",
+          "utf8",
+        );
+
+        await expect(
+          runMigrations(pool, { migrationDir: tempDir }),
+        ).rejects.toThrow(/missing/i);
       } finally {
         await rm(tempDir, { recursive: true, force: true });
       }

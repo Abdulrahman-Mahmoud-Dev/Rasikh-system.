@@ -1,9 +1,50 @@
+import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import type { Pool, PoolClient, QueryResult, QueryResultRow } from "pg";
 import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_MIGRATION_DIR,
   loadMigrations,
+  runMigrations,
 } from "../../src/db/migrate.js";
+
+function createMigrationMockPool(
+  appliedRows: Array<{ version: string; checksum: string }>,
+): Pool {
+  const query = async <T extends QueryResultRow = QueryResultRow>(
+    sql: string,
+  ): Promise<QueryResult<T>> => {
+    const normalized = sql.replace(/\s+/g, " ").trim();
+    if (normalized.startsWith("SELECT version, checksum FROM public.schema_migrations")) {
+      return {
+        rows: appliedRows as unknown as T[],
+        command: "SELECT",
+        rowCount: appliedRows.length,
+        oid: 0,
+        fields: [],
+      };
+    }
+    return {
+      rows: [],
+      command: "SELECT",
+      rowCount: 0,
+      oid: 0,
+      fields: [],
+    };
+  };
+
+  const client = {
+    query,
+    release: () => {},
+  } as unknown as PoolClient;
+
+  return {
+    connect: async () => client,
+  } as unknown as Pool;
+}
 
 describe("SQL Migrations Structure & Constitution Compliance", () => {
   it("loads ordered SQL migrations with valid SHA-256 checksums", async () => {
@@ -39,5 +80,45 @@ describe("SQL Migrations Structure & Constitution Compliance", () => {
     expect(allSql).toContain(
       "CHECK (educational_status IN ('active', 'temporarily_suspended', 'expelled'))",
     );
+  });
+
+  it("detects both modified checksums and missing applied migrations in runMigrations", async () => {
+    const migrations = await loadMigrations(DEFAULT_MIGRATION_DIR);
+    const appliedRows = migrations.map((m) => ({
+      version: m.version,
+      checksum: m.checksum,
+    }));
+    const mockPool = createMigrationMockPool(appliedRows);
+
+    // 1. Modified checksum when all versions exist
+    const modifiedDir = await mkdtemp(join(tmpdir(), "rasikh-unit-mod-"));
+    try {
+      await cp(DEFAULT_MIGRATION_DIR, modifiedDir, { recursive: true });
+      await writeFile(
+        join(modifiedDir, "0001_core_identity_and_hierarchy.sql"),
+        "-- modified\nSELECT 1;",
+        "utf8",
+      );
+      await expect(
+        runMigrations(mockPool, { migrationDir: modifiedDir }),
+      ).rejects.toThrow(/modified/i);
+    } finally {
+      await rm(modifiedDir, { recursive: true, force: true });
+    }
+
+    // 2. Missing file when an applied version is absent
+    const missingDir = await mkdtemp(join(tmpdir(), "rasikh-unit-miss-"));
+    try {
+      await writeFile(
+        join(missingDir, "0001_core_identity_and_hierarchy.sql"),
+        "-- only one file\nSELECT 1;",
+        "utf8",
+      );
+      await expect(
+        runMigrations(mockPool, { migrationDir: missingDir }),
+      ).rejects.toThrow(/missing/i);
+    } finally {
+      await rm(missingDir, { recursive: true, force: true });
+    }
   });
 });
