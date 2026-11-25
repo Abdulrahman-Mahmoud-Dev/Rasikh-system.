@@ -1,22 +1,46 @@
-
 import Fastify from "fastify";
+import type { Pool } from "pg";
+import { ZodError } from "zod";
 
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+
 import { env } from "./config/env.js";
-import healthRoute from "./routes/health.js";
+import associationsRoutes from "./modules/associations/associations.routes.js";
+import auditRoutes from "./modules/audit/audit.routes.js";
+import authRoutes from "./modules/auth/auth.routes.js";
+import educationRoutes from "./modules/education/education.routes.js";
+import peopleRoutes from "./modules/people/people.routes.js";
+import studentsRoutes from "./modules/students/students.routes.js";
+import authenticationPlugin from "./plugins/authentication.js";
 import databasePlugin from "./plugins/database.js";
+import healthRoute from "./routes/health.js";
+import { AppError } from "./shared/errors/app-error.js";
 
-export function buildApp() {
+export interface BuildAppOptions {
+  pool?: Pool;
+  logger?: boolean;
+}
+
+function getPgErrorCode(error: unknown): string | undefined {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const code = (error as { code?: unknown }).code;
+    return typeof code === "string" ? code : undefined;
+  }
+  return undefined;
+}
+
+export function buildApp(options?: BuildAppOptions) {
   const app = Fastify({
-    logger: {
-      level: env.LOG_LEVEL,
-    },
-
+    logger:
+      options?.logger === false
+        ? false
+        : {
+            level: env.LOG_LEVEL,
+          },
     bodyLimit: 1024 * 1024,
-
     requestTimeout: 30_000,
   });
 
@@ -41,38 +65,87 @@ export function buildApp() {
     timeWindow: "1 minute",
   });
 
-app.register(databasePlugin);
-app.register(healthRoute);
-  
+  app.register(databasePlugin, { pool: options?.pool });
+  app.register(authenticationPlugin);
+  app.register(healthRoute);
+
+  app.register(
+    async (api) => {
+      api.register(authRoutes);
+      api.register(associationsRoutes);
+      api.register(peopleRoutes);
+      api.register(studentsRoutes);
+      api.register(educationRoutes);
+      api.register(auditRoutes);
+    },
+    { prefix: "/api/v1" },
+  );
+
   // Centralized error handling
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AppError) {
+      request.log.warn(
+        { code: error.code, statusCode: error.statusCode },
+        "Domain request error",
+      );
+      return reply.status(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.message,
+          ...(error.details !== undefined ? { details: error.details } : {}),
+        },
+      });
+    }
+
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "البيانات المدخلة غير صالحة.",
+          details: error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        },
+      });
+    }
+
+    const pgCode = getPgErrorCode(error);
+    if (pgCode === "23505") {
+      return reply.status(409).send({
+        error: {
+          code: "CONFLICT",
+          message: "يوجد سجل مطابق مسجل مسبقًا.",
+        },
+      });
+    }
+    if (pgCode === "23503") {
+      return reply.status(400).send({
+        error: {
+          code: "INVALID_REFERENCE",
+          message: "العنصر المرتبط غير موجود أو لا ينتمي لنفس الجمعية.",
+        },
+      });
+    }
+
     const statusCode =
-  typeof error === "object" &&
-  error !== null &&
-  "statusCode" in error &&
-  typeof error.statusCode === "number"
-    ? error.statusCode
-    : 500;
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof error.statusCode === "number"
+        ? error.statusCode
+        : 500;
     const isServerError = statusCode >= 500;
 
     if (isServerError) {
-      request.log.error(
-        { err: error },
-        "Unhandled server error",
-      );
+      request.log.error({ err: error }, "Unhandled server error");
     } else {
-      request.log.warn(
-        { err: error },
-        "Request rejected",
-      );
+      request.log.warn({ err: error }, "Request rejected");
     }
 
     return reply.status(statusCode).send({
       error: {
-        code: isServerError
-          ? "INTERNAL_SERVER_ERROR"
-          : "REQUEST_ERROR",
-
+        code: isServerError ? "INTERNAL_SERVER_ERROR" : "REQUEST_ERROR",
         message: isServerError
           ? "حدث خطأ داخلي في الخادم."
           : "الطلب غير صالح أو تعذر تنفيذه.",

@@ -1,20 +1,21 @@
-
 name: Backend checks
 
 on:
   push:
     branches:
       - backend-foundation
+      - "feat/**"
   pull_request:
     branches:
       - main
+      - backend-foundation
     paths:
       - "backend/**"
       - ".github/workflows/backend-check.yml"
 
 jobs:
   backend:
-    name: Typecheck and build
+    name: Typecheck, test, and build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,5 +31,45 @@ jobs:
         run: npm install
       - name: Typecheck backend
         run: npm run typecheck
+      - name: Run unit and HTTP integration tests
+        run: npm test
       - name: Build backend
         run: npm run build
+
+  postgres-integration:
+    name: Live PostgreSQL migrations & invariant tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: rasikh_ci
+          POSTGRES_USER: rasikh_ci
+          POSTGRES_PASSWORD: rasikh_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rasikh_ci -d rasikh_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run SQL migrations
+        env:
+          DATABASE_URL: postgresql://rasikh_ci:rasikh_ci_password@127.0.0.1:5432/rasikh_ci
+        run: npm run db:migrate
+      - name: Run PostgreSQL integration tests
+        env:
+          TEST_DATABASE_URL: postgresql://rasikh_ci:rasikh_ci_password@127.0.0.1:5432/rasikh_ci
+        run: npm test

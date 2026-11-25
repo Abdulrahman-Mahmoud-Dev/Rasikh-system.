@@ -11,22 +11,36 @@ declare module "fastify" {
   }
 }
 
-const databasePlugin: FastifyPluginAsync = async (app) => {
-  const pool = new Pool({
-    connectionString: env.DATABASE_URL,
-    max: 10,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-  });
+export interface DatabasePluginOptions {
+  pool?: Pool;
+}
 
-  pool.on("error", (error) => {
-    app.log.error({ err: error }, "Unexpected PostgreSQL pool error");
-  });
+const databasePlugin: FastifyPluginAsync<DatabasePluginOptions> = async (
+  app,
+  options,
+) => {
+  const ownsPool = !options.pool;
+  const pool =
+    options.pool ??
+    new Pool({
+      connectionString: env.DATABASE_URL,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+    });
+
+  if (ownsPool) {
+    pool.on("error", (error) => {
+      app.log.error({ err: error }, "Unexpected PostgreSQL pool error");
+    });
+  }
 
   app.decorate("db", pool);
 
   app.addHook("onClose", async () => {
-    await pool.end();
+    if (ownsPool) {
+      await pool.end();
+    }
   });
 };
 
