@@ -11,6 +11,47 @@ const OTP_LENGTH = 6;
 const OTP_TTL_MS = 5 * 60 * 1000;   // صلاحية الرمز 5 دقائق
 const MAX_ATTEMPTS = 5;             // عدد المحاولات الخاطئة المسموح
 const RESEND_SECONDS = 60;          // مهلة إعادة الإرسال
+const USERS_DIRECTORY_KEY = 'rasikh_registered_users_v1';
+
+const ROLE_LABELS = {
+    teacher: 'معلم حلقة',
+    supervisor: 'مشرف مسجد',
+    admin: 'إدارة جمعية'
+};
+
+function getSavedUserProfile(email) {
+    if (!email) return null;
+    try {
+        const users = JSON.parse(localStorage.getItem(USERS_DIRECTORY_KEY) || '{}');
+        return users[email.toLowerCase()] || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveUserProfile(profile) {
+    if (!profile || !profile.email) return;
+    try {
+        const users = JSON.parse(localStorage.getItem(USERS_DIRECTORY_KEY) || '{}');
+        users[profile.email.toLowerCase()] = profile;
+        localStorage.setItem(USERS_DIRECTORY_KEY, JSON.stringify(users));
+    } catch (e) {
+        /* تجاهل خطأ التخزين المحلي */
+    }
+}
+
+function resolveUserName(email) {
+    const typedName = currentAuthMode === 'register'
+        ? document.getElementById('fullName')?.value.trim()
+        : '';
+    if (typedName) return typedName;
+
+    const savedProfile = getSavedUserProfile(email);
+    if (savedProfile?.name) return savedProfile.name;
+
+    const localPart = (email || '').split('@')[0]?.trim();
+    return localPart || 'مستخدم راسخ';
+}
 
 if (typeof emailjs !== 'undefined') {
     emailjs.init({ publicKey: EMAILJS_CONFIG.PUBLIC_KEY });
@@ -86,7 +127,7 @@ document.getElementById('rasikhLoginForm')?.addEventListener('submit', function(
    ========================================================================== */
 function sendSelectedOtp() {
     const email = document.getElementById('userEmail').value.trim();
-    const userName = document.getElementById('fullName')?.value.trim() || 'عبدالرحمن عبدالقادر';
+    const userName = resolveUserName(email);
     const sendBtn = document.getElementById('sendOtpBtn');
     const resendBtn = document.getElementById('resendBtn');
 
@@ -259,13 +300,20 @@ function verifyOtpCode() {
 
     if (enteredCode === generatedOtp) {
         generatedOtp = '';
+        const email = document.getElementById('userEmail').value.trim();
+        const savedProfile = getSavedUserProfile(email);
+        const roleKey = currentAuthMode === 'register'
+            ? document.getElementById('userRole')?.value
+            : (savedProfile?.roleKey || 'teacher');
         const userData = {
-            name: document.getElementById('fullName')?.value.trim() || 'عبدالرحمن عبدالقادر',
-            role: document.getElementById('userRole')?.value || 'مشرف عام',
-            email: document.getElementById('userEmail').value.trim(),
-            phone: document.getElementById('userPhone')?.value.trim() || '',
+            name: resolveUserName(email),
+            roleKey: roleKey,
+            role: ROLE_LABELS[roleKey] || savedProfile?.role || 'معلم حلقة',
+            email: email,
+            phone: document.getElementById('userPhone')?.value.trim() || savedProfile?.phone || '',
             loggedIn: true
         };
+        saveUserProfile(userData);
         localStorage.setItem('rasikh_current_user', JSON.stringify(userData));
 
         showToast(`أهلاً بك (${userData.name})! جاري الدخول...`);

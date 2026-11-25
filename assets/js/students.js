@@ -20,17 +20,38 @@ let currentStatusFilter = 'all';
 let activeEvalStudentId = null;
 let activeEvalTrack = 'حفظ';
 
+function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
+
 function getSystemData() {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : {
-        years: ['1447 هـ', '1448 هـ'],
-        activeYear: '1448 هـ',
-        activeMonth: 'محرم',
-        association: { name: '', manager: '' },
-        mosques: [],
-        circles: [],
-        students: []
-    };
+    if (!saved) {
+        return {
+            years: ['1447 هـ', '1448 هـ'],
+            activeYear: '1448 هـ',
+            activeMonth: 'محرم',
+            association: { name: '', manager: '' },
+            mosques: [],
+            circles: [],
+            students: []
+        };
+    }
+    try {
+        return JSON.parse(saved);
+    } catch (e) {
+        return {
+            years: ['1447 هـ', '1448 هـ'],
+            activeYear: '1448 هـ',
+            activeMonth: 'محرم',
+            association: { name: '', manager: '' },
+            mosques: [],
+            circles: [],
+            students: []
+        };
+    }
 }
 
 function saveSystemData(data) {
@@ -42,7 +63,42 @@ function getCurrentPeriodKey(data) {
 }
 
 function getDateKey(dateObj) {
-    return dateObj.toISOString().split('T')[0];
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function syncStudentMonthlyRecord(student, periodKey) {
+    if (!student.records) student.records = {};
+    if (!student.dailyLogs) student.dailyLogs = {};
+
+    let totalAtt = 0;
+    let totalMem = 0;
+    let totalRev = 0;
+    let totalErrors = 0;
+    let evalCount = 0;
+
+    Object.values(student.dailyLogs).forEach(log => {
+        if (log.periodKey && log.periodKey !== periodKey) return;
+        if (log.status === 'حاضر' || log.status === 'متأخر') totalAtt += 1;
+        totalMem += Number(log.memPages) || 0;
+        totalRev += (Number(log.revPages) || 0) + (Number(log.tilawaPages) || 0);
+        if (log.evaluated) {
+            totalErrors += (Number(log.tajweedErrors) || 0) + (Number(log.readingErrors) || 0);
+            evalCount += 1;
+        }
+    });
+
+    const avgErrors = evalCount > 0 ? (totalErrors / evalCount) : 0;
+    const computedGrade = avgErrors === 0 ? 'ممتاز' : (avgErrors <= 2 ? 'جيد جداً' : 'جيد');
+
+    student.records[periodKey] = {
+        attendance: totalAtt,
+        memPages: totalMem,
+        revPages: totalRev,
+        grade: computedGrade
+    };
 }
 
 function showToast(message) {
@@ -74,17 +130,23 @@ function populateDropdowns() {
     const data = getSystemData();
     const addSelect = document.getElementById('studentCircleSelect');
     const filterSelect = document.getElementById('filterCircleSelect');
+    const requestedCircleId = new URLSearchParams(window.location.search).get('circleId');
 
     if (data.circles.length === 0) {
         addSelect.innerHTML = `<option value="">-- أضف حلقة من الرئيسية أولاً --</option>`;
         filterSelect.innerHTML = `<option value="all">جميع الحلقات</option>`;
     } else {
-        const optionsHtml = data.circles.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        const optionsHtml = data.circles.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
         addSelect.innerHTML = optionsHtml;
         filterSelect.innerHTML = `<option value="all">جميع الحلقات</option>` + optionsHtml;
+
+        if (requestedCircleId && data.circles.some(c => c.id === requestedCircleId)) {
+            filterSelect.value = requestedCircleId;
+            addSelect.value = requestedCircleId;
+        }
     }
 
-    const surahsHtml = SURAHS_LIST.map(s => `<option value="${s}">${s}</option>`).join('');
+    const surahsHtml = SURAHS_LIST.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
     document.getElementById('evalFromSurah').innerHTML = surahsHtml;
     document.getElementById('evalToSurah').innerHTML = surahsHtml;
 }
@@ -134,15 +196,34 @@ function addStudent(event) {
     showToast(`تم تسجيل الطالب (${newStudent.name})`);
 }
 
-function deleteActiveStudent() {
+function requestDeleteActiveStudent() {
+    if (!activeEvalStudentId) return;
+    const data = getSystemData();
+    const student = data.students.find(s => s.id === activeEvalStudentId);
+    if (!student) return;
+
+    const textEl = document.getElementById('confirmDeleteStudentText');
+    if (textEl) {
+        textEl.textContent = `سيتم حذف الطالب (${student.name}) وجميع سجلات حضوره وتقييمه. هل تريد المتابعة؟`;
+    }
+    closeSheet('sheetEvaluateStudent');
+    document.getElementById('sheetConfirmDeleteStudent')?.classList.add('open');
+}
+
+function confirmDeleteActiveStudent() {
     if (!activeEvalStudentId) return;
     const data = getSystemData();
     data.students = data.students.filter(s => s.id !== activeEvalStudentId);
     saveSystemData(data);
 
-    closeSheet('sheetEvaluateStudent');
+    activeEvalStudentId = null;
+    closeSheet('sheetConfirmDeleteStudent');
     renderStudentsCards();
     showToast('تم حذف الطالب من الحلقة');
+}
+
+function deleteActiveStudent() {
+    requestDeleteActiveStudent();
 }
 
 /* ==========================================================================
@@ -158,16 +239,26 @@ function setStatusFilter(status, btnEl) {
 function markAllPresentToday() {
     const data = getSystemData();
     const dateKey = getDateKey(selectedDateObj);
+    const periodKey = getCurrentPeriodKey(data);
     const selectedCircle = document.getElementById('filterCircleSelect').value;
 
     data.students.forEach(s => {
         if (selectedCircle !== 'all' && s.circleId !== selectedCircle) return;
         if (!s.dailyLogs) s.dailyLogs = {};
         if (!s.dailyLogs[dateKey]) {
-            s.dailyLogs[dateKey] = { status: 'حاضر', evaluated: false, memPages: 0, revPages: 0, tilawaPages: 0 };
+            s.dailyLogs[dateKey] = {
+                status: 'حاضر',
+                periodKey: periodKey,
+                evaluated: false,
+                memPages: 0,
+                revPages: 0,
+                tilawaPages: 0
+            };
         } else {
             s.dailyLogs[dateKey].status = 'حاضر';
+            s.dailyLogs[dateKey].periodKey = periodKey;
         }
+        syncStudentMonthlyRecord(s, periodKey);
     });
 
     saveSystemData(data);
@@ -227,11 +318,11 @@ function renderStudentsCards() {
         return `
             <div class="student-card ${!dayLog.evaluated && !isAbsentLike ? 'pending-eval' : ''}" onclick="openStudentEvaluation('${s.id}')" style="cursor:pointer;">
                 <div style="display:flex; align-items:center; gap:0.75rem;">
-                    <div class="student-avatar-circle">${firstLetter}</div>
+                    <div class="student-avatar-circle">${esc(firstLetter)}</div>
                     <div>
-                        <div class="item-title" style="font-size:0.95rem;">${s.name}</div>
+                        <div class="item-title" style="font-size:0.95rem;">${esc(s.name)}</div>
                         <div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.3rem;">
-                            <span class="badge-tag ${statusClass}">${dayLog.status}</span>
+                            <span class="badge-tag ${statusClass}">${esc(dayLog.status)}</span>
                             ${evalBadge}
                         </div>
                     </div>
@@ -244,12 +335,20 @@ function renderStudentsCards() {
 /* ==========================================================================
    [4] شاشة تقييم الطالب اليومي وربطها بالسجل الشهري
    ========================================================================== */
+function getTrackSavedPages(dayLog, trackName) {
+    if (!dayLog) return 1;
+    if (trackName === 'حفظ') return dayLog.memPages ?? 1;
+    if (trackName === 'مراجعة صغرى') return dayLog.revPages ?? 0;
+    return dayLog.tilawaPages ?? 0;
+}
+
 function openStudentEvaluation(studentId) {
     const data = getSystemData();
     const student = data.students.find(s => s.id === studentId);
     if (!student) return;
 
     activeEvalStudentId = studentId;
+    activeEvalTrack = 'حفظ';
     const dateKey = getDateKey(selectedDateObj);
     const dayLog = (student.dailyLogs && student.dailyLogs[dateKey])
         ? student.dailyLogs[dateKey]
@@ -262,6 +361,16 @@ function openStudentEvaluation(studentId) {
     document.getElementById('sumTilawaPages').textContent = dayLog.tilawaPages || 0;
     document.getElementById('tajweedErrors').textContent = dayLog.tajweedErrors || 0;
     document.getElementById('readingErrors').textContent = dayLog.readingErrors || 0;
+
+    if (dayLog.fromSurah) document.getElementById('evalFromSurah').value = dayLog.fromSurah;
+    if (dayLog.fromAyah) document.getElementById('evalFromAyah').value = dayLog.fromAyah;
+    if (dayLog.toSurah) document.getElementById('evalToSurah').value = dayLog.toSurah;
+    if (dayLog.toAyah) document.getElementById('evalToAyah').value = dayLog.toAyah;
+
+    document.querySelectorAll('.eval-type-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === 0);
+    });
+    document.getElementById('evalPagesInput').value = dayLog.evaluated ? (dayLog.memPages || 0) : 1;
 
     // تجهيز رابط واتساب لولي الأمر
     const rawPhone = (student.guardianPhone || '').replace(/\D/g, '');
@@ -283,9 +392,22 @@ function onEvalStatusChange() {
 }
 
 function selectEvalTrack(trackName, btnEl) {
+    // حفظ القيمة الحالية في ملخص الشريط قبل التبديل
+    const currentVal = parseFloat(document.getElementById('evalPagesInput').value) || 0;
+    if (activeEvalTrack === 'حفظ') document.getElementById('sumMemPages').textContent = currentVal;
+    else if (activeEvalTrack === 'مراجعة صغرى') document.getElementById('sumRevPages').textContent = currentVal;
+    else document.getElementById('sumTilawaPages').textContent = currentVal;
+
     activeEvalTrack = trackName;
     document.querySelectorAll('.eval-type-btn').forEach(b => b.classList.remove('active'));
     btnEl.classList.add('active');
+
+    let nextVal = 0;
+    if (trackName === 'حفظ') nextVal = parseFloat(document.getElementById('sumMemPages').textContent) || 0;
+    else if (trackName === 'مراجعة صغرى') nextVal = parseFloat(document.getElementById('sumRevPages').textContent) || 0;
+    else nextVal = parseFloat(document.getElementById('sumTilawaPages').textContent) || 0;
+
+    document.getElementById('evalPagesInput').value = nextVal;
 }
 
 function adjustErrorCount(elementId, delta) {
@@ -305,15 +427,14 @@ function saveDailyEvaluation() {
     const isAbsent = ['غائب', 'غائب بعذر', 'استئذان'].includes(status);
 
     if (!student.dailyLogs) student.dailyLogs = {};
-    const prevDay = student.dailyLogs[dateKey] || { memPages: 0, revPages: 0, tilawaPages: 0 };
 
     const addedPages = isAbsent ? 0 : (parseFloat(document.getElementById('evalPagesInput').value) || 0);
     const tajweedErr = parseInt(document.getElementById('tajweedErrors').textContent, 10) || 0;
     const readingErr = parseInt(document.getElementById('readingErrors').textContent, 10) || 0;
 
-    let memPages = prevDay.memPages || 0;
-    let revPages = prevDay.revPages || 0;
-    let tilawaPages = prevDay.tilawaPages || 0;
+    let memPages = isAbsent ? 0 : (parseFloat(document.getElementById('sumMemPages').textContent) || 0);
+    let revPages = isAbsent ? 0 : (parseFloat(document.getElementById('sumRevPages').textContent) || 0);
+    let tilawaPages = isAbsent ? 0 : (parseFloat(document.getElementById('sumTilawaPages').textContent) || 0);
 
     if (!isAbsent) {
         if (activeEvalTrack === 'حفظ') memPages = addedPages;
@@ -323,6 +444,7 @@ function saveDailyEvaluation() {
 
     student.dailyLogs[dateKey] = {
         status: status,
+        periodKey: periodKey,
         evaluated: !isAbsent,
         memPages: memPages,
         revPages: revPages,
@@ -335,28 +457,7 @@ function saveDailyEvaluation() {
         readingErrors: readingErr
     };
 
-    // تحديث السجل الشهري الموحد تلقائياً ليتزامن مع صفحة التقارير
-    if (!student.records) student.records = {};
-    if (!student.records[periodKey]) {
-        student.records[periodKey] = { attendance: 0, memPages: 0, revPages: 0, grade: 'ممتاز' };
-    }
-
-    let totalAtt = 0, totalMem = 0, totalRev = 0;
-    Object.values(student.dailyLogs).forEach(log => {
-        if (log.status === 'حاضر' || log.status === 'متأخر') totalAtt += 1;
-        totalMem += (log.memPages || 0);
-        totalRev += (log.revPages || 0) + (log.tilawaPages || 0);
-    });
-
-    const totalErrors = tajweedErr + readingErr;
-    const computedGrade = totalErrors === 0 ? 'ممتاز' : (totalErrors <= 2 ? 'جيد جداً' : 'جيد');
-
-    student.records[periodKey] = {
-        attendance: totalAtt,
-        memPages: totalMem,
-        revPages: totalRev,
-        grade: computedGrade
-    };
+    syncStudentMonthlyRecord(student, periodKey);
 
     saveSystemData(data);
     closeSheet('sheetEvaluateStudent');
