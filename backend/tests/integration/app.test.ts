@@ -304,6 +304,16 @@ describe("Fastify Backend HTTP Integration", () => {
   });
 
   it("completes server-side OTP login, blocks cross-tenant access, enforces guardian read-only, and computes monthly report", async () => {
+    // Phone-based OTP is no longer accepted; login is email-only.
+    const phoneOtpRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/otp/request",
+      payload: {
+        identifier: "0551234567",
+      },
+    });
+    expect(phoneOtpRes.statusCode).toBe(400);
+
     // 1. Request OTP — response never returns OTP code
     const otpReqRes = await app.inject({
       method: "POST",
