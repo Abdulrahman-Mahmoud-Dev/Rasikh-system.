@@ -770,6 +770,12 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
         }
 
         if (!account) {
+          if (!identity.emailAuthoritative) {
+            throw new UnauthorizedError(
+              "هذا البريد ليس Gmail أو Google Workspace موثوقًا. أنشئ الحساب بالبريد وكلمة المرور وأكّد البريد أولًا.",
+              "GOOGLE_EMAIL_VERIFICATION_REQUIRED",
+            );
+          }
           // A profile may already exist (for example, a person record created by
           // an association). Reuse it rather than creating a duplicate person.
           const personResult = await client.query<{ id: string; full_name: string; file_number: string; email_verified_at: Date | string | null }>(
