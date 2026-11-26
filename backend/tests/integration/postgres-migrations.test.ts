@@ -31,13 +31,13 @@ describe.skipIf(!testDatabaseUrl)(
       const firstRun = await runMigrations(pool, {
         migrationDir: DEFAULT_MIGRATION_DIR,
       });
-      expect(firstRun.applied).toHaveLength(4);
+      expect(firstRun.applied).toHaveLength(6);
 
       const secondRun = await runMigrations(pool, {
         migrationDir: DEFAULT_MIGRATION_DIR,
       });
       expect(secondRun.applied).toHaveLength(0);
-      expect(secondRun.skipped).toHaveLength(4);
+      expect(secondRun.skipped).toHaveLength(6);
     });
 
     it("aborts if an already-applied migration checksum is modified", async () => {
