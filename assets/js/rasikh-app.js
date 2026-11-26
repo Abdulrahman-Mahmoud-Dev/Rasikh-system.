@@ -53,6 +53,7 @@
     $('statCircles').textContent=String(uniqueCount('circle_id'));
     $('statStudents').textContent=String(state.students.length);
     $('homeAssociation').textContent=state.assignments.find(a=>a.association_id===state.associationId)?.association_name||'—';
+    $('homeAssociationName').textContent=state.assignments.find(a=>a.association_id===state.associationId)?.association_name||'—';
     $('homeRole').textContent=state.assignments.find(a=>a.association_id===state.associationId)?.role_code||'عضوية';
   };
   const renderStructure = () => {
