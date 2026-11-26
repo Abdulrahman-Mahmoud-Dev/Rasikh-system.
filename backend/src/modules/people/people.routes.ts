@@ -17,6 +17,7 @@ import {
   type ScopeType,
 } from "../../shared/domain/constants.js";
 import {
+  AppError,
   BadRequestError,
   ConflictError,
   ForbiddenError,
@@ -30,6 +31,7 @@ import {
   hashSecret,
 } from "../../shared/utilities/crypto.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
+import { sendInvitationEmail } from "../auth/email.service.js";
 
 const associationParamsSchema = z.object({
   associationId: z.string().uuid(),
@@ -87,6 +89,7 @@ interface InvitationRow {
   id: string;
   association_id: string;
   invite_type: "staff_role" | "guardian_link";
+  recipient_email: string | null;
   role_code: RoleCode;
   scope_type: ScopeType;
   branch_id: string | null;
@@ -227,12 +230,21 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
       const { associationId } = associationParamsSchema.parse(request.params);
       const body = createInvitationSchema.parse(request.body);
 
-      if (!body.recipientEmail && !body.recipientPhone) {
+      if (!body.recipientEmail) {
         throw new BadRequestError(
-          "يجب تحديد البريد الإلكتروني أو رقم الجوال للمدعو.",
-          "INVITATION_RECIPIENT_REQUIRED",
+          "البريد الإلكتروني للمدعو إلزامي لإرسال الدعوة.",
+          "INVITATION_EMAIL_REQUIRED",
         );
       }
+      if (!env.PUBLIC_APP_URL) {
+        throw new AppError(
+          503,
+          "PUBLIC_APP_URL_NOT_CONFIGURED",
+          "رابط موقع راسخ غير مضبوط في إعدادات الخادم، لذلك لم تُنشأ الدعوة.",
+        );
+      }
+
+      const recipientEmail = body.recipientEmail.trim().toLowerCase();
 
       const normalizedPhone = body.recipientPhone
         ? normalizeSaudiPhone(body.recipientPhone)
@@ -315,7 +327,7 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
             invitationId,
             associationId,
             body.inviteType,
-            body.recipientEmail?.trim().toLowerCase() ?? null,
+            recipientEmail,
             normalizedPhone,
             tokenHash,
             body.roleCode,
@@ -346,12 +358,75 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         });
       });
 
+      const contextResult = await app.db.query<{
+        association_name: string;
+        inviter_name: string;
+        scope_name: string;
+      }>(
+        `SELECT
+           a.name AS association_name,
+           p.full_name AS inviter_name,
+           COALESCE(
+             (SELECT c.name FROM public.circles c
+               WHERE c.id = $2 AND c.association_id = a.id),
+             (SELECT qp.name FROM public.quranic_premises qp
+               WHERE qp.id = $3 AND qp.association_id = a.id),
+             (SELECT b.display_name FROM public.branches b
+               WHERE b.id = $4 AND b.association_id = a.id),
+             a.name
+           ) AS scope_name
+         FROM public.associations a
+         INNER JOIN public.persons p ON p.id = $5
+         WHERE a.id = $1
+         LIMIT 1`,
+        [
+          associationId,
+          body.circleId ?? null,
+          body.quranicPremiseId ?? null,
+          body.branchId ?? null,
+          auth.personId,
+        ],
+      );
+      const context = contextResult.rows[0];
+      if (!context) {
+        await app.db.query(
+          `UPDATE public.invitations SET status = 'revoked' WHERE id = $1`,
+          [invitationId],
+        );
+        throw new AppError(
+          500,
+          "INVITATION_CONTEXT_NOT_FOUND",
+          "تعذر تجهيز تفاصيل رسالة الدعوة.",
+        );
+      }
+
+      try {
+        await sendInvitationEmail({
+          recipientEmail,
+          recipientName: "مرحبًا بك",
+          invitationUrl: `${env.PUBLIC_APP_URL}/?invitation=${encodeURIComponent(rawToken)}`,
+          organizationName: context.association_name,
+          roleName: body.roleCode,
+          scopeName: context.scope_name,
+          expiresAt,
+          inviterName: context.inviter_name,
+        });
+      } catch (error) {
+        await app.db.query(
+          `UPDATE public.invitations SET status = 'revoked' WHERE id = $1 AND status = 'pending'`,
+          [invitationId],
+        );
+        throw error;
+      }
+
       return reply.status(201).send({
         invitation: {
           id: invitationId,
           inviteType: body.inviteType,
+          recipientEmail,
           roleCode: body.roleCode,
           expiresAt: expiresAt.toISOString(),
+          delivery: "accepted_by_email_provider",
         },
       });
     },
@@ -371,6 +446,7 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
              id,
              association_id,
              invite_type,
+             recipient_email,
              role_code,
              scope_type,
              branch_id,
@@ -404,6 +480,21 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
           throw new BadRequestError(
             "انتهت صلاحية هذه الدعوة.",
             "INVITATION_EXPIRED",
+          );
+        }
+
+        const accountEmailRes = await client.query<{ email: string }>(
+          `SELECT lower(btrim(email)) AS email
+           FROM public.persons
+           WHERE id = $1
+           LIMIT 1`,
+          [auth.personId],
+        );
+        const accountEmail = accountEmailRes.rows[0]?.email;
+        if (!inv.recipient_email || accountEmail !== inv.recipient_email.toLowerCase()) {
+          throw new ForbiddenError(
+            "يجب قبول الدعوة باستخدام الحساب المرتبط بالبريد الذي أُرسلت إليه.",
+            "INVITATION_EMAIL_MISMATCH",
           );
         }
 
