@@ -220,7 +220,9 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "evaluations:manage",
     "settings:manage",
     "attendance:record",
+    "attendance:update",
     "recitations:record",
+    "recitations:update",
   ],
   supervisor_deputy: [
     "premises:read",
@@ -230,6 +232,10 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "students:read",
     "reports:read",
     "requests:create",
+    "attendance:record",
+    "attendance:update",
+    "recitations:record",
+    "recitations:update",
   ],
   teacher: [
     "premises:read",
