@@ -494,15 +494,31 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
       const body = passwordLoginSchema.parse(request.body);
       const account = await loadAccountByEmail(app.db, body.email);
 
-      if (
-        !account ||
-        !account.password_hash ||
-        account.account_status !== "active" ||
-        !account.email_verified_at
-      ) {
+      if (!account) {
         throw new UnauthorizedError(
-          "البريد أو كلمة المرور غير صحيحة، أو لم يتم تأكيد البريد بعد.",
-          "INVALID_LOGIN",
+          "لا يوجد حساب مسجل بهذا البريد الإلكتروني. تحقق من كتابة البريد أو أنشئ حسابًا جديدًا.",
+          "ACCOUNT_NOT_FOUND",
+        );
+      }
+
+      if (account.account_status === "disabled") {
+        throw new UnauthorizedError(
+          "هذا الحساب موقوف، ولا يمكن تسجيل الدخول به حاليًا.",
+          "ACCOUNT_DISABLED",
+        );
+      }
+
+      if (account.account_status !== "active" || !account.email_verified_at) {
+        throw new UnauthorizedError(
+          "حسابك لم يكتمل تفعيله بعد. افتح رسالة تأكيد البريد الإلكتروني ثم حاول تسجيل الدخول.",
+          "EMAIL_VERIFICATION_REQUIRED",
+        );
+      }
+
+      if (!account.password_hash) {
+        throw new UnauthorizedError(
+          "هذا الحساب لا يملك كلمة مرور حتى الآن. سجّل الدخول باستخدام Google أو استخدم استعادة كلمة المرور لتعيين كلمة مرور.",
+          "PASSWORD_NOT_SET",
         );
       }
 
