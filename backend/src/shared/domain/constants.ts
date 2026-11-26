@@ -215,6 +215,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "students:read",
     "students:update",
     "students:transfer",
+    "plans:manage",
     "reports:read",
     "requests:create",
     "requests:decide",
@@ -262,7 +263,6 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "attendance:update",
     "recitations:record",
     "recitations:update",
-    "reports:read",
   ],
   guardian: ["students:read", "reports:read"],
 };
