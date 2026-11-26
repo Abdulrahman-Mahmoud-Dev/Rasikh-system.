@@ -104,6 +104,7 @@ function getAssignedCircleChoices(){
  );
 }
 function isCircleStaffOnly(){
+ if(state.user?.platformRole)return false;
  const roles=state.assignments.map(a=>a.role_code).filter(Boolean);
  return roles.length>0&&roles.every(role=>role==="teacher"||role==="circle_assistant");
 }
@@ -128,6 +129,7 @@ async function enterAssignedCircle(choice){
  state.activeCircleId=choice.circle_id;
  state.activeAssignedWorkspace=choice;
  state.associationId=choice.association_id;
+ refreshPermissions();
  showApp();
  $("#associationSelect").classList.add("hidden");
  $("#assignedContext").textContent=choice.premise_name+" · "+choice.circle_name;
