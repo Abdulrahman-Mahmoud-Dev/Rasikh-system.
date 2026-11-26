@@ -3,6 +3,22 @@ import { AppError } from "../../shared/errors/app-error.js";
 
 type EmailTemplateParams = Record<string, string>;
 
+let emailQueue: Promise<void> = Promise.resolve();
+let nextEmailDispatchAt = 0;
+
+async function enqueueEmail(task: () => Promise<void>): Promise<void> {
+  const current = emailQueue.then(async () => {
+    const waitMs = Math.max(0, nextEmailDispatchAt - Date.now());
+    if (waitMs > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+    }
+    nextEmailDispatchAt = Date.now() + 1_000;
+    await task();
+  });
+  emailQueue = current.catch(() => undefined);
+  return current;
+}
+
 async function sendEmailTemplate(
   recipientEmail: string,
   templateId: string | undefined,
@@ -18,6 +34,7 @@ async function sendEmailTemplate(
     );
   }
 
+  await enqueueEmail(async () => {
   const payload: Record<string, unknown> = {
     service_id: env.EMAILJS_SERVICE_ID,
     template_id: templateId,
@@ -56,6 +73,7 @@ async function sendEmailTemplate(
       "رفضت خدمة البريد إرسال الرسالة. راجع إعدادات القالب والمستلم في EmailJS.",
     );
   }
+  });
 }
 
 export interface InvitationEmail {
