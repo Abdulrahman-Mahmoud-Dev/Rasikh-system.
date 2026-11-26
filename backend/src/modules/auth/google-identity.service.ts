@@ -169,7 +169,7 @@ export async function verifyGoogleIdToken(
     (claims.nbf !== undefined && claims.nbf > nowSeconds + 60) ||
     claims.nonce !== expectedNonce ||
     !claims.email ||
-    claims.email_verified !== true
+    !(claims.email_verified === true || claims.email_verified === "true")
   ) {
     throw new AppError(
       401,
@@ -179,9 +179,10 @@ export async function verifyGoogleIdToken(
   }
 
   const email = claims.email.trim().toLowerCase();
+  const emailVerified =
+    claims.email_verified === true || claims.email_verified === "true";
   const emailAuthoritative =
-    email.endsWith("@gmail.com") ||
-    (claims.email_verified === true && Boolean(claims.hd));
+    email.endsWith("@gmail.com") || (emailVerified && Boolean(claims.hd));
 
   return {
     subject: claims.sub,
