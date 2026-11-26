@@ -50,6 +50,10 @@ const environmentSchema = z
     EMAILJS_INVITATION_TEMPLATE_ID: z.string().min(3).optional(),
     EMAILJS_ACCOUNT_TEMPLATE_ID: z.string().min(3).optional(),
 
+    // Legacy OTP endpoint kept for backwards compatibility; the new UI uses password/Google.
+    RESEND_API_KEY: z.string().min(10).optional(),
+    EMAIL_FROM: z.string().min(3).optional(),
+
     // Google Web OAuth client ID is public. The server validates every ID token.
     GOOGLE_CLIENT_ID: z.string().min(20).optional(),
 
