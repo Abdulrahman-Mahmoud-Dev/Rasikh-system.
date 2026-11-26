@@ -29,15 +29,23 @@ describe("Rasikh frontend shell boundaries", () => {
   });
 
   it("provides attendance access in the mobile navigation and excludes OTP login inputs", async () => {
-    const html = await readFile(indexUrl, "utf8");
+    const [html, js, css] = await Promise.all([
+      readFile(indexUrl, "utf8"),
+      readFile(new URL("../../../assets/js/app.js", import.meta.url), "utf8"),
+      readFile(appCssUrl, "utf8"),
+    ]);
     const appStart = html.indexOf('<div id="appView" class="app-view hidden">');
     const bottomNavStart = html.indexOf('<nav class="mobile-bottom-nav"', appStart);
     const bottomNavEnd = html.indexOf("</nav>", bottomNavStart);
     const bottomNav = html.slice(bottomNavStart, bottomNavEnd);
 
     expect(bottomNav).toContain('data-view="attendance"');
+    expect((bottomNav.match(/<button/g) ?? []).length).toBe(6);
+    expect(css).toContain("grid-template-columns:repeat(6,minmax(0,1fr))");
     expect(html).not.toContain('id="otpCode"');
     expect(html).not.toContain('id="otpArea"');
+    expect(js).toContain("function openInvitationDialog()");
+    expect(js).toContain("/associations/\"+state.associationId+\"/invitations");
   });
 
   it("keeps the login card brand rendered once rather than adding a duplicate pseudo heading", async () => {
