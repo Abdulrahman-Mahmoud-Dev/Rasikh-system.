@@ -344,6 +344,8 @@ const authRoutes: FastifyPluginAsync = async (app) => {
          AND assigned_branch.association_id = ra.association_id
        WHERE m.person_id = $1
          AND m.status = 'active'
+         AND m.valid_from <= now()
+         AND (m.valid_until IS NULL OR m.valid_until > now())
        ORDER BY a.name ASC`,
       [auth.personId],
     );
