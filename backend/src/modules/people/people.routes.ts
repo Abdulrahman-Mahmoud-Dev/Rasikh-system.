@@ -9,6 +9,7 @@ import {
 } from "../../plugins/authorization.js";
 import {
   PERMISSIONS,
+  ROLE_CODES,
   ROLE_DEFAULT_PERMISSIONS,
   SCOPE_TYPES,
   type RoleCode,
