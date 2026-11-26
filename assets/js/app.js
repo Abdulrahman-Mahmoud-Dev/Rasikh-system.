@@ -2,20 +2,105 @@
 "use strict";
 const API=(window.RASIKH_CONFIG&&window.RASIKH_CONFIG.API_BASE_URL||"").replace(/\/$/,"");
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const state={identifier:"",otpRequested:false,user:null,assignments:[],associationId:"",hierarchy:[],students:[],attendance:{},report:null};
+const state={user:null,assignments:[],permissions:[],roles:[],associationId:"",hierarchy:[],students:[],attendance:{},report:null,invitationToken:null,invitationInfo:null,resetToken:null,authMode:"login"};
 const labels={after_fajr:"بعد الفجر",after_dhuhr:"بعد الظهر",after_asr:"بعد العصر",after_maghrib:"بعد المغرب",after_isha:"بعد العشاء",active:"نشط",temporarily_suspended:"موقوف مؤقتًا",expelled:"مستبعد",mosque:"مسجد",quranic_center:"مقر قرآني"};
 function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),3200)}
 function msg(el,text,isError=true){el.textContent=text;el.style.color=isError?"#b4232e":"#176b54"}
 async function api(path,opts={}){if(!API)throw Error("لم يتم ضبط عنوان API في assets/js/rasikh-config.js.");const res=await fetch(API+"/api/v1"+path,{...opts,credentials:"include",headers:{"Content-Type":"application/json",...(opts.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw Error(data?.error?.message||"تعذر تنفيذ الطلب ("+res.status+")");return data}
-function showApp(){ $("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");$("#sideUserName").textContent=state.user.fullName;$("#userInitial").textContent=(state.user.fullName||"ر").trim()[0];$("#accountDetails").textContent=state.user.fullName+" · "+(state.user.fileNumber||"");$("#welcomeTitle").textContent="مرحبًا بك، "+state.user.fullName;$("#todayLabel").textContent=new Intl.DateTimeFormat("ar-SA-u-ca-islamic",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());}
-async function requestOtp(){const email=state.identifier.trim().toLowerCase();if(!email)throw Error("أدخل بريدك الإلكتروني.");const data=await api("/auth/otp/request",{method:"POST",body:JSON.stringify({email})});state.otpRequested=true;$("#otpArea").classList.remove("hidden");msg($("#loginMessage"),data.message||"إذا كان البريد مرتبطًا بحساب فعال، فسيصلك رمز التحقق.",false)}
-async function verifyOtp(){const code=$("#otpCode").value.trim();if(!/^\d{6}$/.test(code))throw Error("أدخل رمزًا من ستة أرقام.");const data=await api("/auth/otp/verify",{method:"POST",body:JSON.stringify({email:state.identifier.trim().toLowerCase(),code})});state.user=data.user;await loadMe();showApp();await loadCurrentAssociation()}
-async function loadMe(){const data=await api("/auth/me");state.user=data.user;state.assignments=data.assignments||[];const unique=new Map();state.assignments.forEach(a=>unique.set(a.association_id,{id:a.association_id,name:a.association_name}));const opts=[...unique.values()];$("#associationSelect").innerHTML=opts.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join("")||'<option value="">لا توجد جمعية مرتبطة</option>';state.associationId=opts[0]?.id||"";$("#sideUserRole").textContent=state.assignments[0]?.role_code||"حساب موثق";if(state.user.platformRole)$("#sideUserRole").textContent="إدارة النظام"}
-async function loadCurrentAssociation(){if(!state.associationId){renderHome();return}$("#associationSelect").value=state.associationId;await Promise.all([loadHierarchy(),loadStudents()]);renderHome()}
+function showApp(){
+ $("#loginView").classList.add("hidden");$("#onboardingView").classList.add("hidden");$("#appView").classList.remove("hidden");
+ $("#sideUserName").textContent=state.user.fullName;$("#userInitial").textContent=(state.user.fullName||"ر").trim()[0];
+ $("#accountDetails").textContent=state.user.fullName+" · "+(state.user.fileNumber||"");
+ $("#welcomeTitle").textContent="مرحبًا بك، "+state.user.fullName;
+ $("#todayLabel").textContent=new Intl.DateTimeFormat("ar-SA-u-ca-islamic",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());
+ renderNavigation();
+}
+function hasPermission(permission){return state.permissions.includes(permission)}
+function hasAnyPermission(items){return items.some(hasPermission)}
+function roleSet(){return new Set(state.roles)}
+function refreshPermissions(){
+ const current=state.assignments.filter(a=>a.association_id===state.associationId);
+ state.roles=[...new Set(current.map(a=>a.role_code))];
+ state.permissions=[...new Set(current.flatMap(a=>Array.isArray(a.granted_permissions)?a.granted_permissions:[]))];
+}
+function renderNavigation(){
+ const roles=roleSet(),guardian=roles.size>0&&[...roles].every(r=>r==="guardian");
+ const teaching=roles.has("teacher")||roles.has("circle_assistant");
+ const supervisory=roles.has("supervisor")||roles.has("supervisor_deputy");
+ const canStructure=hasAnyPermission(["premises:read","premises:create","circles:read","circles:create"]);
+ const canStudents=hasPermission("students:read");
+ const canAttendance=hasAnyPermission(["attendance:record","attendance:update","recitations:record","recitations:update"]);
+ const canReports=hasPermission("reports:read");
+ const canSettings=hasAnyPermission(["settings:manage","evaluations:manage"]);
+ const canAdd=hasAnyPermission(["premises:create","circles:create","students:create","people:create","invitations:create","roles:assign"]);
+ const allowed={home:true,structure:canStructure,students:canStudents,attendance:canAttendance,reports:canReports,settings:canSettings};
+ $$("#sideNav [data-view]").forEach(b=>b.classList.toggle("hidden",!allowed[b.dataset.view]));
+ const sideStructure=$("#sideNav [data-view=structure]");
+ if(sideStructure)sideStructure.lastChild.textContent=teaching?"حلقاتي":supervisory?"المساجد والمقرات":"الهيكل التنظيمي";
+ const sideStudents=$("#sideNav [data-view=students]");
+ if(sideStudents)sideStudents.lastChild.textContent=guardian?"أبنائي":"الطلاب";
+ const mobileAllowed={home:!guardian,structure:canStructure,students:canStudents,attendance:canAttendance};
+ $$(".mobile-bottom-nav [data-view]").forEach(b=>{
+  const v=b.dataset.view;b.classList.toggle("hidden",!mobileAllowed[v]);
+  if(v==="home")b.lastChild.textContent=teaching?"اليوم":"الرئيسية";
+  if(v==="structure")b.lastChild.textContent=teaching?"حلقاتي":supervisory?"المساجد":"الهيكل";
+  if(v==="students")b.lastChild.textContent=guardian?"أبنائي":"الطلاب";
+ });
+ $("#mobileAdd").classList.toggle("hidden",!canAdd);
+ $("#mobileMore").classList.remove("hidden");
+ $("#mobileMenu").classList.toggle("hidden",!canStructure&&!canStudents&&!canAttendance&&!canReports&&!canSettings);
+ if($("#addPremiseBtn"))$("#addPremiseBtn").classList.toggle("hidden",!hasPermission("premises:create"));
+ if($("#addStudentBtn"))$("#addStudentBtn").classList.toggle("hidden",!hasPermission("students:create"));
+ if($("#circleForm"))$("#circleForm").classList.toggle("hidden",!hasPermission("circles:create"));
+ const first=state.assignments.find(a=>a.association_id===state.associationId);
+ const roleLabels={association_manager:"مدير جمعية",association_deputy:"نائب مدير الجمعية",branch_manager:"مدير فرع",branch_deputy:"نائب مدير الفرع",supervisor:"مشرف",supervisor_deputy:"مساعد مشرف",teacher:"معلم",circle_assistant:"مساعد حلقة",guardian:"ولي أمر"};
+ $("#sideUserRole").textContent=state.user.platformRole?"إدارة النظام":(roleLabels[first?.role_code]||"عضو راسخ");
+}
+function setAuthMode(mode){
+ state.authMode=mode;
+ $("#tabLogin").classList.toggle("active",mode==="login");$("#tabRegister").classList.toggle("active",mode==="register");
+ $("#passwordLoginForm").classList.toggle("hidden",mode!=="login");$("#registerForm").classList.toggle("hidden",mode!=="register");
+ $("#invitationRegisterForm").classList.add("hidden");$("#resetRequestForm").classList.add("hidden");$("#resetConfirmForm").classList.add("hidden");
+ $("#tabLogin").classList.remove("hidden");$("#tabRegister").classList.remove("hidden");
+ $("#authTitle").textContent=mode==="login"?"تسجيل الدخول":"إنشاء حساب جديد";
+ $("#authDescription").textContent=mode==="login"?"ادخل إلى حسابك لمتابعة أعمالك وحلقاتك.":"أنشئ حسابك بالبريد الإلكتروني وكلمة المرور، ثم أكد بريدك مرة واحدة.";
+ $("#authMessage").textContent="";
+}
+async function loadMe(){
+ const data=await api("/auth/me");state.user=data.user;state.assignments=data.assignments||[];
+ const unique=new Map();state.assignments.forEach(a=>unique.set(a.association_id,{id:a.association_id,name:a.association_name}));
+ const opts=[...unique.values()];
+ $("#associationSelect").innerHTML=opts.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join("")||'<option value="">لا توجد جهة مرتبطة</option>';
+ state.associationId=opts[0]?.id||"";refreshPermissions();
+}
+async function afterAuthenticated(){
+ await loadMe();
+ if(!state.assignments.length){await showOnboarding();return;}
+ showApp();
+ const landing=state.roles.every(r=>r==="guardian")?"students":
+  (state.roles.includes("teacher")||state.roles.includes("circle_assistant")?"attendance":"home");
+ nav(landing);await loadCurrentAssociation();
+}
+async function acceptPendingInvitation(){
+ if(!state.invitationToken)return;
+ await api("/invitations/accept",{method:"POST",body:JSON.stringify({token:state.invitationToken})});
+ state.invitationToken=null;const url=new URL(location.href);url.searchParams.delete("invitation");history.replaceState({}, "",url.toString());
+}
+async function loadCurrentAssociation(){refreshPermissions();renderNavigation();if(!state.associationId){renderHome();return}$("#associationSelect").value=state.associationId;await Promise.all([loadHierarchy(),loadStudents()]);renderHome()}
 async function loadHierarchy(){const data=await api("/associations/"+state.associationId+"/hierarchy");state.hierarchy=data.items||[];renderStructure();populateCircleSelects()}
 async function loadStudents(){const data=await api("/associations/"+state.associationId+"/students");state.students=data.students||[];renderStudents();renderAttendanceRows()}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function nav(view){$$(".nav-item,.mobile-bottom-nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$$(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+view));$("#pageTitle").textContent=({home:"الرئيسية",structure:"الهيكل التنظيمي",students:"الطلاب",attendance:"الرصد اليومي",reports:"التقارير",settings:"الإعدادات"})[view];$(".sidebar").classList.remove("open");if(view==="students")renderStudents();if(view==="attendance")renderAttendanceRows()}
+function nav(view){
+ const allowed={home:true,structure:hasAnyPermission(["premises:read","premises:create","circles:read","circles:create"]),
+  students:hasPermission("students:read"),
+  attendance:hasAnyPermission(["attendance:record","attendance:update","recitations:record","recitations:update"]),
+  reports:hasPermission("reports:read"),settings:hasAnyPermission(["settings:manage","evaluations:manage"])};
+ if(!allowed[view]){toast("ليس لديك صلاحية لفتح هذا القسم.");return;}
+ $$(".nav-item,.mobile-bottom-nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+ $$(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+view));
+ $("#pageTitle").textContent=({home:"الرئيسية",structure:"الهيكل التنظيمي",students:roleSet().has("guardian")?"أبنائي":"الطلاب",attendance:"الرصد اليومي",reports:"التقارير",settings:"الإعدادات"})[view];
+ $(".sidebar").classList.remove("open");if(view==="students")renderStudents();if(view==="attendance")renderAttendanceRows();
+}
 function renderHome(){const branches=new Set(state.hierarchy.map(x=>x.branch_id));const premises=new Map(state.hierarchy.filter(x=>x.premise_id).map(x=>[x.premise_id,x]));const circles=new Set(state.hierarchy.filter(x=>x.circle_id).map(x=>x.circle_id));$("#homeStats").innerHTML=[["الفروع",branches.size],["المساجد والمقرات",premises.size],["الحلقات",circles.size],["الطلاب",state.students.length]].map(([n,v])=>'<article class="stat-card"><span>'+n+'</span><strong>'+v.toLocaleString("ar-SA")+'</strong></article>').join("");$("#homeStructure").innerHTML=state.hierarchy.length?state.hierarchy.slice(0,8).map(x=>'<div class="premise-card"><strong>'+esc(x.premise_name||x.branch_display_name||"فرع")+'</strong><div class="muted">'+esc(x.city||"")+' · '+esc(x.district||"")+'</div>'+(x.circle_name?'<span class="circle-chip">'+esc(x.circle_name)+'</span>':"")+'</div>').join(""):'<div class="empty-state">لا توجد عناصر في الهيكل التنظيمي بعد.</div>'}
 function renderStructure(){const groups=new Map();state.hierarchy.forEach(x=>{if(!groups.has(x.branch_id))groups.set(x.branch_id,{name:x.branch_display_name||x.city||"فرع",city:x.city,district:x.district,premises:new Map()});if(x.premise_id){const g=groups.get(x.branch_id);if(!g.premises.has(x.premise_id))g.premises.set(x.premise_id,{name:x.premise_name,type:x.premise_type,circles:[]});if(x.circle_id)g.premises.get(x.premise_id).circles.push(x.circle_name)}});$("#structureList").innerHTML=groups.size?[...groups.values()].map(g=>'<article class="branch-card"><h3>'+esc(g.name)+'</h3><small class="muted">'+esc(g.city||"")+' · '+esc(g.district||"")+'</small>'+[...g.premises.values()].map(p=>'<div class="premise-card"><div class="premise-head"><strong>'+esc(p.name)+'</strong><span class="status-pill">'+(labels[p.type]||"")+'</span></div>'+p.circles.map(c=>'<span class="circle-chip">'+esc(c)+'</span>').join("")+'</div>').join("")+'</article>').join(""):'<div class="panel empty-state">لا توجد فروع أو مساجد مسجلة.</div>';const premises=[...new Map(state.hierarchy.filter(x=>x.premise_id).map(x=>[x.premise_id,{id:x.premise_id,name:x.premise_name}])).values()];$("#circlePremise").innerHTML=premises.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")||'<option value="">أضف مسجدًا أو مقرًا أولًا</option>'}
 function populateCircleSelects(){const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{id:x.circle_id,name:x.circle_name}])).values()];["studentCircleFilter","attendanceCircle","reportCircle"].forEach(id=>{const el=$("#"+id),prev=el.value;el.innerHTML=(id==="studentCircleFilter"||id==="reportCircle"?'<option value="">جميع الحلقات</option>':"")+circles.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("");if([...el.options].some(o=>o.value===prev))el.value=prev});}
@@ -35,27 +120,118 @@ async function addPremise(){openModal("إضافة مسجد أو مقر قرآن�
 async function addStudent(){const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{id:x.circle_id,name:x.circle_name}])).values()];openModal("إضافة طالب",'<form id="newStudentForm"><label>اسم الطالب</label><input name="fullName" required minlength="3"><label>رقم الجوال</label><input name="phone" required placeholder="05xxxxxxxx" inputmode="tel"><label>البريد الإلكتروني</label><input name="email" type="email" required><label>الحلقة</label><select name="circleId" required>'+circles.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("")+'</select><label>الأجزاء المحفوظة سابقًا</label><input name="previousMemorizedJuz" type="number" min="0" max="30" value="0"><button class="btn primary" type="submit">إضافة الطالب</button></form>');$("#newStudentForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.currentTarget));b.previousMemorizedJuz=Number(b.previousMemorizedJuz);await api("/associations/"+state.associationId+"/students",{method:"POST",body:JSON.stringify(b)});closeModal();await loadStudents();renderHome();toast("تم تسجيل الطالب.")}}
 async function createCircle(e){e.preventDefault();const b={quranicPremiseId:$("#circlePremise").value,name:$("#circleName").value.trim(),studyPeriod:$("#circlePeriod").value,targetStage:$("#circleStage").value.trim()||undefined};await api("/associations/"+state.associationId+"/circles",{method:"POST",body:JSON.stringify(b)});e.target.reset();await loadHierarchy();toast("تم إنشاء الحلقة.")}
 async function checkApi(){const r=await fetch(API+"/health/ready",{credentials:"include"});const d=await r.json();$("#apiStatus").textContent=r.ok?"الخادم وقاعدة البيانات متصلان.":"الخادم غير جاهز: "+(d.database||r.status)}
-async function boot(){try{const me=await api("/auth/me");state.user=me.user;state.assignments=me.assignments||[];await loadMe();showApp();await loadCurrentAssociation()}catch(e){if(!API){$("#loginMessage").textContent="عنوان الخادم غير مضبوط. حدّث assets/js/rasikh-config.js أولًا."}else{$("#loginMessage").textContent="سجّل الدخول للمتابعة."}}}
-$("#loginForm").onsubmit=async e=>{e.preventDefault();try{state.identifier=$("#identifier").value.trim();await requestOtp()}catch(err){msg($("#loginMessage"),err.message)}};
-$("#verifyBtn").onclick=async()=>{try{await verifyOtp()}catch(e){msg($("#loginMessage"),e.message)}};
-
-$("#associationSelect").onchange=async e=>{state.associationId=e.target.value;try{await loadCurrentAssociation()}catch(err){toast(err.message)}};
-$("#sideNav").onclick=e=>{const b=e.target.closest("[data-view]");if(b)nav(b.dataset.view)};
-$(".mobile-bottom-nav").onclick=e=>{const b=e.target.closest("[data-view]");if(b)nav(b.dataset.view)};
-$("#content").onclick=e=>{const b=e.target.closest("[data-go]");if(b)nav(b.dataset.go)};
+async function showOnboarding(){
+ $("#loginView").classList.add("hidden");$("#appView").classList.add("hidden");$("#onboardingView").classList.remove("hidden");
+ try{
+  const status=await api("/onboarding/status"),pending=status.pendingRegistrations||[],box=$("#pendingRegistration");
+  if(pending.length){box.classList.remove("hidden");box.innerHTML="<strong>طلب جمعية قيد التحقق</strong><div>"+pending.map(x=>esc(x.association_name)+" — "+esc(x.license_number)+" — "+esc(x.licensing_authority)).join("<br>")+"</div><p>لن تُفعّل صلاحيات إدارة الجمعية حتى اعتماد بيانات الترخيص.</p>";$("#workspaceOptions").classList.add("hidden");}
+  else{box.classList.add("hidden");$("#workspaceOptions").classList.remove("hidden");}
+ }catch(e){$("#onboardingMessage").textContent=e.message;}
+}
+function showInvitationRegistration(info){
+ state.invitationInfo=info;$("#loginView").classList.remove("hidden");$("#onboardingView").classList.add("hidden");$("#appView").classList.add("hidden");
+ $("#passwordLoginForm").classList.add("hidden");$("#registerForm").classList.add("hidden");$("#resetRequestForm").classList.add("hidden");$("#resetConfirmForm").classList.add("hidden");
+ $("#tabLogin").classList.add("hidden");$("#tabRegister").classList.add("hidden");
+ $("#authTitle").textContent="قبول الدعوة";$("#authDescription").textContent="أكمل بيانات حسابك لقبول الدعوة المرسلة إليك.";
+ $("#invitationEmail").value=info.email;$("#invitationSummary").textContent="دعوة إلى "+info.organizationName+" · الدور: "+info.roleCode+" · تنتهي في "+new Date(info.expiresAt).toLocaleString("ar-SA");
+ $("#invitationRegisterForm").classList.remove("hidden");$("#invitationFullName").focus();
+}
+async function initializeInvitation(token){state.invitationToken=token;const info=await api("/auth/invitations/"+encodeURIComponent(token)+"/preview");showInvitationRegistration(info.invitation);}
+async function finishSessionAndRoute(){if(state.invitationToken){try{await acceptPendingInvitation();}catch(e){msg($("#authMessage"),e.message);return;}}await afterAuthenticated();}
+async function initializeGoogle(){
+ const note=$("#googleSetupNote"),slot=$("#googleButton"),clientId=window.RASIKH_CONFIG?.GOOGLE_CLIENT_ID||"";
+ if(!API||!clientId){note.classList.remove("hidden");slot.classList.add("hidden");return;}
+ try{
+  const nonceData=await api("/auth/google/nonce",{method:"POST",body:"{}"});
+  const ready=()=>{
+   if(!window.google?.accounts?.id){note.classList.remove("hidden");note.textContent="تعذر تحميل تسجيل Google. تحقق من الاتصال ثم أعد تحميل الصفحة.";return;}
+   window.google.accounts.id.initialize({client_id:clientId,nonce:nonceData.nonce,callback:async response=>{
+    try{await api("/auth/google",{method:"POST",body:JSON.stringify({credential:response.credential,nonce:nonceData.nonce})});await finishSessionAndRoute();}
+    catch(e){msg($("#authMessage"),e.message);}
+   }});
+   window.google.accounts.id.renderButton(slot,{type:"standard",theme:"outline",size:"large",text:"continue_with",shape:"rectangular",logo_alignment:"left",width:360,locale:"ar"});
+   note.classList.add("hidden");
+  };
+  if(window.google?.accounts?.id)ready();else window.addEventListener("load",ready,{once:true});
+ }catch(e){note.classList.remove("hidden");note.textContent=e.message;}
+}
+async function beginAuthFromUrl(){
+ const params=new URLSearchParams(location.search),invitation=params.get("invitation"),verify=params.get("verifyEmail"),reset=params.get("resetPassword");
+ if(invitation){try{await initializeInvitation(invitation);return true;}catch(e){msg($("#authMessage"),e.message);return false;}}
+ if(verify){try{await api("/auth/email/verify",{method:"POST",body:JSON.stringify({token:verify})});const url=new URL(location.href);url.searchParams.delete("verifyEmail");history.replaceState({}, "",url.toString());await afterAuthenticated();return true;}catch(e){msg($("#authMessage"),e.message);return false;}}
+ if(reset){state.resetToken=reset;$("#passwordLoginForm").classList.add("hidden");$("#registerForm").classList.add("hidden");$("#tabLogin").classList.add("hidden");$("#tabRegister").classList.add("hidden");$("#authTitle").textContent="استعادة كلمة المرور";$("#authDescription").textContent="أدخل كلمة مرور جديدة لحسابك.";$("#resetConfirmForm").classList.remove("hidden");return true;}
+ return false;
+}
+async function submitPasswordLogin(e){e.preventDefault();try{await api("/auth/password/login",{method:"POST",body:JSON.stringify({email:$("#loginEmail").value.trim(),password:$("#loginPassword").value})});await finishSessionAndRoute();}catch(err){msg($("#authMessage"),err.message);}}
+async function submitRegistration(e){e.preventDefault();try{const data=await api("/auth/register",{method:"POST",body:JSON.stringify({fullName:$("#registerFullName").value.trim(),email:$("#registerEmail").value.trim(),password:$("#registerPassword").value})});msg($("#authMessage"),data.message||"افتح رسالة البريد لإكمال إنشاء الحساب.",false);e.target.reset();}catch(err){msg($("#authMessage"),err.message);}}
+async function submitInvitationRegistration(e){
+ e.preventDefault();
+ try{await api("/auth/invitations/register",{method:"POST",body:JSON.stringify({token:state.invitationToken,fullName:$("#invitationFullName").value.trim(),password:$("#invitationPassword").value})});state.invitationToken=null;const url=new URL(location.href);url.searchParams.delete("invitation");history.replaceState({}, "",url.toString());await afterAuthenticated();}
+ catch(err){msg($("#authMessage"),err.message);if(err.message.includes("لديه حساب بالفعل")){$("#invitationRegisterForm").classList.add("hidden");setAuthMode("login");$("#loginEmail").value=state.invitationInfo?.email||"";$("#authTitle").textContent="سجّل الدخول لقبول الدعوة";}}
+}
+async function submitResetRequest(e){e.preventDefault();try{const data=await api("/auth/password-reset/request",{method:"POST",body:JSON.stringify({email:$("#resetEmail").value.trim()})});msg($("#authMessage"),data.message,false);}catch(err){msg($("#authMessage"),err.message);}}
+async function submitResetConfirm(e){e.preventDefault();try{const data=await api("/auth/password-reset/confirm",{method:"POST",body:JSON.stringify({token:state.resetToken,password:$("#newPassword").value})});state.resetToken=null;const url=new URL(location.href);url.searchParams.delete("resetPassword");history.replaceState({}, "",url.toString());setAuthMode("login");msg($("#authMessage"),data.message,false);}catch(err){msg($("#authMessage"),err.message);}}
+function showForgotPassword(){setAuthMode("login");$("#passwordLoginForm").classList.add("hidden");$("#resetRequestForm").classList.remove("hidden");$("#authTitle").textContent="استعادة كلمة المرور";$("#authDescription").textContent="سنرسل رابطًا آمنًا إلى بريدك الإلكتروني.";}
+async function createWorkspace(type){
+ $("#onboardingMessage").textContent="";
+ if(type==="association"){$("#workspaceOptions").classList.add("hidden");$("#associationSetup").classList.remove("hidden");return;}
+ if(type==="independent_mosque"||type==="independent_quranic_center"){$("#workspaceOptions").classList.add("hidden");$("#independentSetup").classList.remove("hidden");$("#independentKind").value=type;$("#independentTitle").textContent=type==="independent_mosque"?"إنشاء مسجد مستقل":"إنشاء مقر قرآني مستقل";return;}
+ if(type==="demo"){try{await api("/onboarding/demo",{method:"POST",body:"{}"});await afterAuthenticated();}catch(e){$("#onboardingMessage").textContent=e.message;}}
+}
+async function submitAssociationSetup(e){e.preventDefault();try{const data=await api("/onboarding/association",{method:"POST",body:JSON.stringify({name:$("#associationName").value.trim(),licenseNumber:$("#associationLicense").value.trim(),licensingAuthority:$("#licensingAuthority").value.trim()})});$("#associationSetup").classList.add("hidden");$("#pendingRegistration").classList.remove("hidden");$("#pendingRegistration").textContent=data.message;$("#workspaceOptions").classList.add("hidden");}catch(err){$("#onboardingMessage").textContent=err.message;}}
+async function submitIndependentSetup(e){e.preventDefault();try{await api("/onboarding/independent",{method:"POST",body:JSON.stringify({workspaceKind:$("#independentKind").value,name:$("#independentName").value.trim(),city:$("#independentCity").value.trim(),district:$("#independentDistrict").value.trim(),administrativeRegion:$("#independentRegion").value.trim()||undefined,circleName:$("#independentCircleName").value.trim(),studyPeriod:$("#independentStudyPeriod").value})});await afterAuthenticated();}catch(err){$("#onboardingMessage").textContent=err.message;}}
+async function boot(){
+ if(await beginAuthFromUrl())return;
+ try{await loadMe();if(!state.assignments.length){await showOnboarding();return;}showApp();const landing=state.roles.every(r=>r==="guardian")?"students":(state.roles.includes("teacher")||state.roles.includes("circle_assistant")?"attendance":"home");nav(landing);await loadCurrentAssociation();}
+ catch(e){if(!API){msg($("#authMessage"),"عنوان الخادم غير مضبوط في assets/js/rasikh-config.js. إعداد API_BASE_URL مطلوب لتشغيل الدخول.");}else{msg($("#authMessage"),"سجّل الدخول للمتابعة.");}}
+}
+$("#passwordLoginForm").onsubmit=submitPasswordLogin;$("#registerForm").onsubmit=submitRegistration;$("#invitationRegisterForm").onsubmit=submitInvitationRegistration;$("#resetRequestForm").onsubmit=submitResetRequest;$("#resetConfirmForm").onsubmit=submitResetConfirm;
+$("#tabLogin").onclick=()=>setAuthMode("login");$("#tabRegister").onclick=()=>setAuthMode("register");$("#forgotPasswordBtn").onclick=showForgotPassword;$("#existingInviteAccount").onclick=()=>{setAuthMode("login");$("#loginEmail").value=state.invitationInfo?.email||"";};
+$$("[data-return-login]").forEach(b=>b.onclick=()=>setAuthMode("login"));
+$$("[data-workspace]").forEach(b=>b.onclick=()=>createWorkspace(b.dataset.workspace));
+$$("[data-back-workspaces]").forEach(b=>b.onclick=()=>{$("#associationSetup").classList.add("hidden");$("#independentSetup").classList.add("hidden");$("#workspaceOptions").classList.remove("hidden");});
+$("#associationSetupForm").onsubmit=submitAssociationSetup;$("#independentSetupForm").onsubmit=submitIndependentSetup;
+$("#associationSelect").onchange=async e=>{state.associationId=e.target.value;refreshPermissions();renderNavigation();try{await loadCurrentAssociation();}catch(err){toast(err.message);}};
+$("#sideNav").onclick=e=>{const b=e.target.closest("[data-view]");if(b&&!b.classList.contains("hidden"))nav(b.dataset.view);};
+$(".mobile-bottom-nav").onclick=e=>{const b=e.target.closest("[data-view]");if(b&&!b.classList.contains("hidden"))nav(b.dataset.view);};
+$("#content").onclick=e=>{const b=e.target.closest("[data-go]");if(b)nav(b.dataset.go);};
 $("#mobileMenu").onclick=()=>$(".sidebar").classList.toggle("open");
-$("#mobileAdd").onclick=()=>{openModal("إضافة جديدة",'<div class="quick-actions"><button id="quickPremise">إضافة مسجد أو مقر</button><button id="quickStudent">إضافة طالب</button><button id="quickCircle">إنشاء حلقة</button></div>')};
-$("#mobileMore").onclick=()=>{openModal("المزيد",'<div class="quick-actions"><button id="moreAttendance">الرصد اليومي</button><button id="moreReports">التقارير</button><button id="moreSettings">الإعدادات</button></div>')};
-$("#logoutBtn").onclick=$("#logoutSettings").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}"})}catch{}location.reload()};
-$("#addPremiseBtn").onclick=()=>addPremise();$("#addStudentBtn").onclick=()=>addStudent();$("#circleForm").onsubmit=async e=>{try{await createCircle(e)}catch(err){toast(err.message)}};
+$("#mobileAdd").onclick=()=>{
+ const items=[];
+ if(hasPermission("premises:create"))items.push('<button id="quickPremise">إضافة مسجد أو مقر</button>');
+ if(hasPermission("circles:create"))items.push('<button id="quickCircle">إنشاء حلقة</button>');
+ if(hasPermission("students:create"))items.push('<button id="quickStudent">إضافة طالب</button>');
+ if(hasPermission("invitations:create"))items.push('<button id="quickInvitation">إرسال دعوة</button>');
+ openModal("إضافة جديدة",'<div class="quick-actions">'+items.join("")+'</div>');
+};
+$("#mobileMore").onclick=()=>{
+ const items=['<button id="moreProfile">الملف الشخصي</button>'];
+ if(hasPermission("reports:read"))items.push('<button id="moreReports">التقارير</button>');
+ if(hasAnyPermission(["attendance:record","recitations:record"]))items.push('<button id="moreAttendance">الرصد اليومي</button>');
+ if(hasPermission("settings:manage")||hasPermission("evaluations:manage"))items.push('<button id="moreSettings">الإعدادات</button>');
+ items.push('<button id="moreHelp">مركز المساعدة والتعلّم</button>','<button id="moreSupport">الدعم والتواصل</button>');
+ openModal("المزيد",'<div class="quick-actions">'+items.join("")+'</div>');
+};
+$("#logoutBtn").onclick=$("#logoutSettings").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}"});}catch{}location.reload();};
+$("#addPremiseBtn").onclick=()=>addPremise();$("#addStudentBtn").onclick=()=>addStudent();$("#circleForm").onsubmit=async e=>{try{await createCircle(e);}catch(err){toast(err.message);}};
 $("#studentSearch").oninput=renderStudents;$("#studentCircleFilter").onchange=renderStudents;$("#studentStatusFilter").onchange=renderStudents;
-$("#attendanceCircle").onchange=()=>{state.attendance={};renderAttendanceRows()};$("#attendanceDate").onchange=()=>{state.attendance={};renderAttendanceRows()};$("#attendanceRows").onclick=async e=>{const r=e.target.closest("[data-recitation]");if(r){try{await addRecitation(r.dataset.recitation)}catch(err){toast(err.message)}return}const b=e.target.closest("[data-student]");if(!b)return;state.attendance[b.dataset.student]=b.dataset.status;renderAttendanceRows()};
-$("#markAllPresent").onclick=()=>{state.students.filter(s=>s.circleId===$("#attendanceCircle").value&&s.educationalStatus==="active").forEach(s=>state.attendance[s.id]="present");renderAttendanceRows()};
-$("#saveAttendance").onclick=async()=>{try{await saveAttendance()}catch(e){toast(e.message)}};
-$("#loadReport").onclick=async()=>{try{await loadReport()}catch(e){toast(e.message)}};
-$("#checkApi").onclick=async()=>{try{await checkApi()}catch(e){$("#apiStatus").textContent=e.message}};
-$("#modalContent").onclick=e=>{if(e.target.id==="quickPremise"){closeModal();addPremise()}if(e.target.id==="quickStudent"){closeModal();addStudent()}if(e.target.id==="quickCircle"){closeModal();nav("structure");$("#circleName").focus()}if(e.target.id==="moreAttendance"){closeModal();nav("attendance")}if(e.target.id==="moreReports"){closeModal();nav("reports")}if(e.target.id==="moreSettings"){closeModal();nav("settings")}};
-$("#closeModal").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+$("#attendanceCircle").onchange=()=>{state.attendance={};renderAttendanceRows();};$("#attendanceDate").onchange=()=>{state.attendance={};renderAttendanceRows();};
+$("#attendanceRows").onclick=async e=>{const r=e.target.closest("[data-recitation]");if(r){try{await addRecitation(r.dataset.recitation);}catch(err){toast(err.message);}return;}const b=e.target.closest("[data-student]");if(!b)return;state.attendance[b.dataset.student]=b.dataset.status;renderAttendanceRows();};
+$("#markAllPresent").onclick=()=>{state.students.filter(s=>s.circleId===$("#attendanceCircle").value&&s.educationalStatus==="active").forEach(s=>state.attendance[s.id]="present");renderAttendanceRows();};
+$("#saveAttendance").onclick=async()=>{try{await saveAttendance();}catch(e){toast(e.message);}};
+$("#loadReport").onclick=async()=>{try{await loadReport();}catch(e){toast(e.message);}};
+$("#checkApi").onclick=async()=>{try{await checkApi();}catch(e){$("#apiStatus").textContent=e.message;}};
+$("#modalContent").onclick=e=>{
+ if(e.target.id==="quickPremise"){closeModal();addPremise();}
+ if(e.target.id==="quickStudent"){closeModal();addStudent();}
+ if(e.target.id==="quickCircle"){closeModal();nav("structure");$("#circleName").focus();}
+ if(e.target.id==="quickInvitation"){closeModal();toast("واجهة الدعوات ستكتمل في المرحلة التالية.");}
+ if(e.target.id==="moreAttendance"){closeModal();nav("attendance");}
+ if(e.target.id==="moreReports"){closeModal();nav("reports");}
+ if(e.target.id==="moreSettings"){closeModal();nav("settings");}
+ if(e.target.id==="moreProfile"){closeModal();openModal("الملف الشخصي",'<p>'+esc(state.user?.fullName||"")+'</p><p>'+esc(state.user?.fileNumber||"")+'</p>');}
+};
+$("#closeModal").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal();};
 $("#attendanceDate").value=new Date().toISOString().slice(0,10);
-boot();
+window.addEventListener("load",initializeGoogle,{once:true});boot();
 })();
