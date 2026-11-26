@@ -16,7 +16,6 @@ import {
 import { recordAuditEvent } from "../audit/audit.service.js";
 
 const associationRegistrationSchema = z.object({
-  name: z.string().trim().min(3).max(200),
   licenseNumber: z.string().trim().min(2).max(100),
   licensingAuthority: z.string().trim().min(2).max(200),
 });
@@ -234,7 +233,7 @@ const onboardingRoutes: FastifyPluginAsync = async (app) => {
              id, name, license_number, license_verified, status, workspace_kind
            )
            VALUES ($1, $2, $3, false, 'pending_verification', 'registered_association')`,
-          [associationId, body.name, body.licenseNumber],
+          [associationId, "جمعية قيد التحقق - " + body.licenseNumber, body.licenseNumber],
         );
 
         await createEvaluationSettings(client, associationId);
