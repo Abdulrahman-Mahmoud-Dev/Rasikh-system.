@@ -6,3 +6,54 @@
 .mobile-bottom-nav{display:none}
 .attendance-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:720px){.mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);inset:auto 0 0;background:#fff;border-top:1px solid var(--r-border);padding:7px 5px calc(7px + env(safe-area-inset-bottom));z-index:8;box-shadow:0 -4px 18px #0b1f3f0b}.mobile-bottom-nav button{border:0;background:transparent;color:#687780;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px}.mobile-bottom-nav button span{font-size:21px;line-height:1.2;color:var(--r-green)}.mobile-bottom-nav button.active{color:var(--r-green)}.mobile-bottom-nav #mobileAdd{color:var(--r-green);font-weight:800}.mobile-bottom-nav #mobileAdd span{background:var(--r-green);color:#fff;border-radius:14px;width:34px;height:30px;display:grid;place-items:center}.content-area{padding-bottom:95px}.attendance-actions{align-items:flex-start;flex-direction:column}}
+/* الهوية المعتمدة في Rasikh-UI-Designs.pdf — دستور 1.5 */
+.sidebar{background:#fff;color:var(--r-text);border-left:1px solid var(--r-border);box-shadow:none}
+.side-brand{border-bottom-color:var(--r-border)}
+.side-brand strong{color:var(--r-navy)}
+.side-brand small{color:var(--r-muted)}
+.side-brand .brand-mark.small{background:transparent;color:var(--r-gold);border-color:var(--r-gold)}
+.nav-item{color:#34443F}
+.nav-item span{background:transparent;color:var(--r-gray)}
+.nav-item:nth-child(1) span{color:var(--r-green)}
+.nav-item:nth-child(2) span{color:var(--r-blue)}
+.nav-item:nth-child(3) span{color:var(--r-gold)}
+.nav-item:nth-child(4) span{color:var(--r-red)}
+.nav-item:nth-child(5) span{color:var(--r-gray)}
+.nav-item:nth-child(6) span{color:var(--r-gray)}
+.nav-item.active,.nav-item:hover{background:#F1F5F3;color:var(--r-navy)}
+.side-user{border-top-color:var(--r-border)}
+.side-user strong{color:var(--r-navy)}
+.side-user small{color:var(--r-muted)}
+.side-user button{color:var(--r-gray)}
+.main-area{background:var(--r-bg)}
+.topbar{background:#fff;border-bottom-color:var(--r-border)}
+.topbar h1{color:var(--r-navy)}
+.welcome-panel{background:transparent;color:var(--r-text);border-radius:0;padding:8px 0 12px;box-shadow:none}
+.welcome-panel h2{color:var(--r-navy);font-size:27px}
+.welcome-panel p{color:var(--r-muted)}
+.eyebrow.light{color:var(--r-gold)}
+.welcome-seal{display:none}
+.stat-card{box-shadow:none;border-color:var(--r-border)}
+.stat-card strong{color:var(--r-navy)}
+.panel{box-shadow:none;border-color:var(--r-border)}
+.branch-card{box-shadow:none}
+.premise-card{background:#F8FAF9}
+.circle-chip{background:#F5F7F6;color:var(--r-text);border:1px solid var(--r-border)}
+.status-pill{background:#EDF5F1;color:var(--r-green)}
+.status-pill.suspended{background:#FBF6EA;color:#8B6A20}
+.status-pill.expelled{background:#FBEFEE;color:var(--r-red)}
+.btn.primary{background:var(--r-green)}
+.btn.soft{background:#F1F5F3;color:var(--r-navy);border-color:var(--r-border)}
+.quick-actions button{background:#fff;border-color:var(--r-border);color:var(--r-navy)}
+.toast{background:var(--r-navy)}
+@media(max-width:720px){
+ .sidebar{width:100%;height:auto;position:fixed;inset:auto 0 0 0;transform:none;display:flex;flex-direction:row;align-items:center;padding:7px 4px calc(7px + env(safe-area-inset-bottom));border-top:1px solid var(--r-border);border-left:0;box-shadow:0 -3px 16px #0B1F3F0D;z-index:12}
+ .side-brand,.side-user{display:none}
+ .sidebar nav{width:100%;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding:0}
+ .nav-item{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:6px 2px;border-radius:10px;font-size:10px;white-space:nowrap}
+ .nav-item span{font-size:19px;width:auto;line-height:1.2}
+ .main-area{margin:0;padding-bottom:84px}
+ .topbar{height:68px}
+ .icon-button{display:none}
+ .sidebar.open{transform:none}
+}
