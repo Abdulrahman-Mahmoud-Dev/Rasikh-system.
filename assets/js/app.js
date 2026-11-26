@@ -301,7 +301,7 @@ async function showOnboarding(){
  $("#loginView").classList.add("hidden");$("#assignmentSelectView").classList.add("hidden");$("#appView").classList.add("hidden");$("#onboardingView").classList.remove("hidden");
  try{
   const status=await api("/onboarding/status"),pending=status.pendingRegistrations||[],box=$("#pendingRegistration");
-  if(pending.length){box.classList.remove("hidden");box.innerHTML="<strong>طلب جمعية قيد التحقق</strong><div>"+pending.map(x=>esc(x.association_name)+" — "+esc(x.license_number)+" — "+esc(x.licensing_authority)).join("<br>")+"</div><p>لن تُفعّل صلاحيات إدارة الجمعية حتى اعتماد بيانات الترخيص.</p>";$("#workspaceOptions").classList.add("hidden");}
+  if(pending.length){box.classList.remove("hidden");box.innerHTML="<strong>طلب جمعية قيد التحقق</strong><div>"+pending.map(x=>"رقم الترخيص: "+esc(x.license_number)+" — الجهة المرخِّصة: "+esc(x.licensing_authority)).join("<br>")+"</div><p>سيُعتمد اسم الجمعية من بيانات الجهة المختصة بعد التحقق، ولن تُفعّل صلاحيات إدارتها قبل الاعتماد.</p>";$("#workspaceOptions").classList.add("hidden");}
   else{box.classList.add("hidden");$("#workspaceOptions").classList.remove("hidden");}
  }catch(e){$("#onboardingMessage").textContent=e.message;}
 }
@@ -355,7 +355,7 @@ async function createWorkspace(type){
  if(type==="independent_mosque"||type==="independent_quranic_center"){$("#workspaceOptions").classList.add("hidden");$("#independentSetup").classList.remove("hidden");$("#independentKind").value=type;$("#independentTitle").textContent=type==="independent_mosque"?"إنشاء مسجد مستقل":"إنشاء مقر قرآني مستقل";return;}
  if(type==="demo"){try{await api("/onboarding/demo",{method:"POST",body:"{}"});await afterAuthenticated();}catch(e){$("#onboardingMessage").textContent=e.message;}}
 }
-async function submitAssociationSetup(e){e.preventDefault();try{const data=await api("/onboarding/association",{method:"POST",body:JSON.stringify({name:$("#associationName").value.trim(),licenseNumber:$("#associationLicense").value.trim(),licensingAuthority:$("#licensingAuthority").value.trim()})});$("#associationSetup").classList.add("hidden");$("#pendingRegistration").classList.remove("hidden");$("#pendingRegistration").textContent=data.message;$("#workspaceOptions").classList.add("hidden");}catch(err){$("#onboardingMessage").textContent=err.message;}}
+async function submitAssociationSetup(e){e.preventDefault();try{const data=await api("/onboarding/association",{method:"POST",body:JSON.stringify({licenseNumber:$("#associationLicense").value.trim(),licensingAuthority:$("#licensingAuthority").value.trim()})});$("#associationSetup").classList.add("hidden");$("#pendingRegistration").classList.remove("hidden");$("#pendingRegistration").textContent=data.message;$("#workspaceOptions").classList.add("hidden");}catch(err){$("#onboardingMessage").textContent=err.message;}}
 async function submitIndependentSetup(e){e.preventDefault();try{await api("/onboarding/independent",{method:"POST",body:JSON.stringify({workspaceKind:$("#independentKind").value,name:$("#independentName").value.trim(),city:$("#independentCity").value.trim(),district:$("#independentDistrict").value.trim(),administrativeRegion:$("#independentRegion").value.trim()||undefined,circleName:$("#independentCircleName").value.trim(),studyPeriod:$("#independentStudyPeriod").value})});await afterAuthenticated();}catch(err){$("#onboardingMessage").textContent=err.message;}}
 async function boot(){
  if(await beginAuthFromUrl())return;
