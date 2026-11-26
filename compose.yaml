@@ -1,7 +1,7 @@
 name: rasikh-local
 
 x-backend-environment: &backend-environment
-  NODE_ENV: production
+  NODE_ENV: development
   HOST: 0.0.0.0
   PORT: 3000
   DATABASE_URL: postgresql://${POSTGRES_USER:-rasikh_app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rasikh_dev}
