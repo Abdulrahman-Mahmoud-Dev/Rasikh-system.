@@ -23,6 +23,7 @@ import {
 } from "../../shared/utilities/crypto.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
 import { sendAccountEmail } from "./email.service.js";
+import { applyPendingInvitationsForPerson } from "../people/invitations.service.js";
 import { verifyGoogleIdToken } from "./google-identity.service.js";
 import { hashPassword, verifyPassword } from "./password.service.js";
 
@@ -430,6 +431,12 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
         if (!account) {
           throw new UnauthorizedError("تعذر العثور على الحساب بعد تأكيد البريد.");
         }
+
+        await applyPendingInvitationsForPerson(
+          client,
+          account.person_id,
+          account.email,
+        );
 
         return insertSession(client, request, account);
       });
@@ -862,6 +869,20 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
         `UPDATE public.auth_nonce_challenges SET consumed_at = now() WHERE id = $1`,
         [nonceRow.id],
       );
+
+      if (identity.emailAuthoritative && account.email === identity.email) {
+        await client.query(
+          `UPDATE public.persons SET email_verified_at = COALESCE(email_verified_at, now())
+           WHERE id = $1`,
+          [account.person_id],
+        );
+        await applyPendingInvitationsForPerson(
+          client,
+          account.person_id,
+          identity.email,
+        );
+      }
+
       return insertSession(client, request, account);
     });
 
