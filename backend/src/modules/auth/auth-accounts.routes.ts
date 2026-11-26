@@ -2,7 +2,7 @@ import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
 
 import { env } from "../../config/env.js";
-import { withTransaction } from "../../db/transaction.js";
+import { withTransaction, type Queryable } from "../../db/transaction.js";
 import {
   getRequiredAuth,
   requireAuth,
@@ -13,7 +13,6 @@ import {
   BadRequestError,
   ConflictError,
   ForbiddenError,
-  TooManyRequestsError,
   UnauthorizedError,
 } from "../../shared/errors/app-error.js";
 import {
@@ -49,7 +48,6 @@ const passwordResetSchema = z.object({
   password: z.string().min(12).max(128),
 });
 
-const googleNonceSchema = z.object({});
 const googleLoginSchema = z.object({
   credential: z.string().min(100).max(10_000),
   nonce: z.string().min(24).max(512),
@@ -120,7 +118,7 @@ function requirePublicAppUrl(): string {
 }
 
 async function reserveFileNumber(
-  client: { query: (sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }> },
+  client: Queryable,
   fullName: string,
 ): Promise<string> {
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -141,7 +139,7 @@ async function reserveFileNumber(
 }
 
 async function insertSession(
-  client: { query: (sql: string, params?: unknown[]) => Promise<unknown> },
+  client: Queryable,
   request: FastifyRequest,
   account: SessionResult["account"],
 ): Promise<SessionResult> {
@@ -191,7 +189,7 @@ function setSessionCookie(reply: {
 }
 
 async function loadAccountByEmail(
-  db: { query: (sql: string, params?: unknown[]) => Promise<{ rows: AccountRow[] }> },
+  db: Queryable,
   email: string,
 ): Promise<AccountRow | undefined> {
   const result = await db.query<AccountRow>(
@@ -216,7 +214,7 @@ async function loadAccountByEmail(
 }
 
 async function createAccountForNewPerson(
-  client: { query: (sql: string, params?: unknown[]) => Promise<unknown> },
+  client: Queryable,
   input: {
     fullName: string;
     email: string;
@@ -967,7 +965,6 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const body = invitationRegistrationSchema.parse(request.body);
-      const publicUrl = requirePublicAppUrl();
       const passwordHash = await hashPassword(body.password);
       const tokenHash = hashSecret(body.token, env.COOKIE_SECRET);
 
@@ -1133,7 +1130,7 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
           [invitation.id, personId],
         );
 
-        await recordAuditEvent(client as never, {
+        await recordAuditEvent(client, {
           associationId: invitation.association_id,
           actorPersonId: personId,
           actorMembershipId: membershipId,
