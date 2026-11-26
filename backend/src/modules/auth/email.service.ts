@@ -108,7 +108,6 @@ export async function sendInvitationEmail(
       scope_name: invitation.scopeName,
       inviter_name: invitation.inviterName,
       expires_at: expiresAt,
-      action_label: "عرض نظام راسخ",
     },
   );
 }
