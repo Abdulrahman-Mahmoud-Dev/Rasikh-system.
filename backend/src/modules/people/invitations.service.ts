@@ -87,6 +87,15 @@ export async function applyInvitationToPerson(
     // A fresh, authorized invitation can reactivate an ended/revoked membership;
     // prior role assignments remain in the audit/history.
     await db.query(
+      `UPDATE public.role_assignments
+       SET valid_until = now()
+       WHERE membership_id = $1
+         AND association_id = $2
+         AND valid_from <= now()
+         AND valid_until IS NULL`,
+      [membershipId, invitation.association_id],
+    );
+    await db.query(
       `UPDATE public.association_memberships
        SET status = 'active', valid_from = now(), valid_until = NULL, updated_at = now()
        WHERE id = $1`,
@@ -104,7 +113,8 @@ export async function applyInvitationToPerson(
        AND branch_id IS NOT DISTINCT FROM $5::uuid
        AND quranic_premise_id IS NOT DISTINCT FROM $6::uuid
        AND circle_id IS NOT DISTINCT FROM $7::uuid
-       AND valid_until IS NULL
+       AND valid_from <= now()
+       AND (valid_until IS NULL OR valid_until > now())
      LIMIT 1
      FOR UPDATE`,
     [
