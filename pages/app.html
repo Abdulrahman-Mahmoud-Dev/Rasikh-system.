@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3F"><title>نظام راسخ</title>
+<link rel="stylesheet" href="../assets/css/rasikh-app.css">
+</head>
+<body>
+<section id="authView" class="auth-wrap hidden">
+ <div class="auth-card">
+  <div class="brand"><span class="brand-mark">ر</span><span>نظام راسخ</span></div>
+  <h1>تسجيل الدخول</h1><p>إدارة جمعيات وحلقات تحفيظ القرآن الكريم</p>
+  <label class="field" for="identifierType">طريقة الدخول</label>
+  <select id="identifierType" class="auth-input"><option value="phone">رقم الجوال</option><option value="email">البريد الإلكتروني</option></select>
+  <label class="field" for="identifier">رقم الجوال أو البريد الإلكتروني</label>
+  <input id="identifier" class="auth-input" autocomplete="username" placeholder="05xxxxxxxx أو name@example.com">
+  <button id="requestOtp" class="primary-btn">إرسال رمز التحقق</button>
+  <div id="otpStep" class="hidden"><label class="field" for="otpCode">رمز التحقق</label><input id="otpCode" class="auth-input" inputmode="numeric" maxlength="6" placeholder="••••••"><button id="verifyOtp" class="primary-btn">تأكيد الدخول</button></div>
+  <div id="authMessage" class="message" aria-live="polite"></div>
+ </div>
+</section>
+<div id="appView" class="shell hidden">
+ <header class="topbar"><div class="brand"><span class="brand-mark">ر</span><span>راسخ</span></div>
+  <div class="top-actions"><span id="headerName" class="top-user"></span><select id="associationSelect" class="association-select" aria-label="اختر الجمعية"></select><button id="refreshBtn" class="icon-btn" title="تحديث">↻</button><button id="logoutBtn" class="icon-btn" title="تسجيل الخروج">⇥</button></div>
+ </header>
+ <div class="layout">
+  <aside class="sidebar"><div class="nav-label">القائمة الرئيسية</div><button class="nav-link active" data-section="home"><span class="nav-icon">⌂</span>الرئيسية</button><button class="nav-link" data-section="structure"><span class="nav-icon">▦</span>الهيكل التنظيمي</button><button class="nav-link" data-section="students"><span class="nav-icon">♙</span>الطلاب</button></aside>
+  <main class="main">
+   <div class="welcome"><div><h1 id="pageTitle">الرئيسية</h1><p>مرحباً بك، <strong id="welcomeName">—</strong></p></div><div class="date-chip" id="homeAssociation">—</div></div>
+   <section id="section-home" class="section active">
+    <div class="stats">
+     <article class="stat"><div class="stat-top"><span>الفروع</span><span class="stat-icon" style="color:var(--blue)">⌖</span></div><strong id="statBranches">—</strong><small>ضمن نطاق صلاحيتك</small></article>
+     <article class="stat"><div class="stat-top"><span>المقرات القرآنية</span><span class="stat-icon" style="color:var(--gold)">⌂</span></div><strong id="statPremises">—</strong><small>مساجد ومراكز</small></article>
+     <article class="stat"><div class="stat-top"><span>الحلقات</span><span class="stat-icon" style="color:var(--emerald)">▤</span></div><strong id="statCircles">—</strong><small>ضمن الهيكل المتاح</small></article>
+     <article class="stat"><div class="stat-top"><span>الطلاب</span><span class="stat-icon" style="color:var(--red)">♙</span></div><strong id="statStudents">—</strong><small>السجلات المتاحة</small></article>
+    </div>
+    <div class="grid-two"><article class="panel"><div class="panel-head"><h2>ملخص الجمعية</h2></div><div class="quick-list"><div class="quick-item"><span>الجمعية الحالية</span><span id="homeAssociationName">تُحمّل البيانات</span></div><div class="quick-item"><span>دورك في الجمعية</span><span id="homeRole">—</span></div></div></article>
+    <article class="panel"><div class="panel-head"><h2>الوصول السريع</h2></div><div class="quick-list"><button class="quick-item" data-section="structure"><span>عرض الهيكل التنظيمي</span><span>←</span></button><button class="quick-item" data-section="students"><span>قائمة الطلاب</span><span>←</span></button></div></article></div>
+   </section>
+   <section id="section-structure" class="section"><article class="panel"><div class="panel-head"><h2>الهيكل التنظيمي</h2><span class="muted">حسب صلاحيات الحساب</span></div><div id="structureContent" class="loading">جارٍ تحميل الهيكل…</div></article></section>
+   <section id="section-students" class="section"><article class="panel"><div class="panel-head"><h2>الطلاب</h2><span class="muted">السجلات المتاحة لك</span></div><div class="toolbar"><input id="studentSearch" class="search" placeholder="ابحث باسم الطالب"><button class="secondary-btn" id="studentsRefresh" onclick="document.getElementById('studentSearch').dispatchEvent(new Event('input'))">تحديث</button></div><div id="studentsContent" class="loading">جارٍ تحميل الطلاب…</div></article></section>
+  </main>
+ </div>
+ <nav class="mobile-nav"><button class="nav-link active" data-section="home"><span class="nav-icon">⌂</span>الرئيسية</button><button class="nav-link" data-section="structure"><span class="nav-icon">▦</span>الهيكل</button><button class="nav-link" data-section="students"><span class="nav-icon">♙</span>الطلاب</button></nav>
+</div>
+<script>window.RASIKH_API_BASE = window.RASIKH_API_BASE || '/api/v1';</script>
+<script src="../assets/js/rasikh-app.js" defer></script>
+</body></html>
