@@ -280,7 +280,7 @@ async function boot(){
  try{await routeAuthenticatedUser();}
  catch(e){if(!API){msg($("#authMessage"),"عنوان الخادم غير مضبوط في assets/js/rasikh-config.js. إعداد API_BASE_URL مطلوب لتشغيل الدخول.");}else{msg($("#authMessage"),"سجّل الدخول للمتابعة.");}}
 }
-$("#assignmentLogout").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}");}catch{}location.reload();};
+$("#assignmentLogout").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}"});}catch{}location.reload();};
 $("#changeAssignedCircle").onclick=()=>showAssignedCircleChooser(getAssignedCircleChoices());
 $("#assignedCircleOptions").onclick=async e=>{const button=e.target.closest("[data-assigned-index]");if(!button)return;const choice=state.availableAssignedChoices[Number(button.dataset.assignedIndex)];if(!choice)return;try{await enterAssignedCircle(choice);}catch(err){msg($("#assignmentSelectMessage"),err.message);}};
 $("#passwordLoginForm").onsubmit=submitPasswordLogin;$("#registerForm").onsubmit=submitRegistration;$("#invitationRegisterForm").onsubmit=submitInvitationRegistration;$("#resetRequestForm").onsubmit=submitResetRequest;$("#resetConfirmForm").onsubmit=submitResetConfirm;
