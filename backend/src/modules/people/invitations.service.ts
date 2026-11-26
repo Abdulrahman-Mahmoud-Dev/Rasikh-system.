@@ -1,5 +1,5 @@
 import type { Queryable } from "../../db/transaction.js";
-import { ROLE_CODES, type RoleCode, type ScopeType } from "../../shared/domain/constants.js";
+import type { RoleCode, ScopeType } from "../../shared/domain/constants.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
 import { generateUuid } from "../../shared/utilities/crypto.js";
 
