@@ -317,8 +317,11 @@ const authRoutes: FastifyPluginAsync = async (app) => {
          ra.branch_id,
          ra.quranic_premise_id,
          ra.circle_id,
-         COALESCE(ra.quranic_premise_id, circle_premise.id) AS assigned_premise_id,
-         COALESCE(ra.quranic_premise_id, circle_premise.name) AS assigned_premise_name,
+         circle_premise.id AS assigned_premise_id,
+         circle_premise.name AS assigned_premise_name,
+         ra.circle_id AS assigned_circle_id,
+         assigned_circle.name AS assigned_circle_name,
+         assigned_circle.study_period AS assigned_circle_period,
          COALESCE(ra.branch_id, circle_premise.branch_id) AS assigned_branch_id,
          assigned_branch.display_name AS assigned_branch_name,
          ra.granted_permissions
