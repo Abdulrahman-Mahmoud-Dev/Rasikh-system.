@@ -9,7 +9,6 @@ import {
   SESSION_COOKIE_NAME,
 } from "../../plugins/authentication.js";
 import {
-  BadRequestError,
   TooManyRequestsError,
   UnauthorizedError,
 } from "../../shared/errors/app-error.js";
