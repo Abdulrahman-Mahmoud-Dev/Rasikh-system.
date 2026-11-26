@@ -44,9 +44,10 @@ const environmentSchema = z
 
     // EmailJS identifiers are not passwords. The private key, when enabled,
     // is a secret and must be stored only in the backend host's secret store.
-    EMAILJS_PUBLIC_KEY: z.string().min(5).optional(),
+    // Existing EmailJS public configuration from the previous working sender.
+    EMAILJS_PUBLIC_KEY: z.string().min(5).default("R-1PwjvGMVEsTg1j5"),
     EMAILJS_PRIVATE_KEY: z.string().min(8).optional(),
-    EMAILJS_SERVICE_ID: z.string().min(3).optional(),
+    EMAILJS_SERVICE_ID: z.string().min(3).default("service_5lcvg4g"),
     EMAILJS_INVITATION_TEMPLATE_ID: z.string().min(3).optional(),
     EMAILJS_ACCOUNT_TEMPLATE_ID: z.string().min(3).optional(),
 
