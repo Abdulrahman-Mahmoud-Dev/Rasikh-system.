@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { Script } from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
@@ -52,4 +53,12 @@ describe("Rasikh frontend shell boundaries", () => {
     const css = await readFile(appCssUrl, "utf8");
     expect(css).not.toContain(".login-card:before");
   });
+  it("parses the browser application script without syntax errors", async () => {
+    const source = await readFile(
+      new URL("../../../assets/js/app.js", import.meta.url),
+      "utf8",
+    );
+    expect(() => new Script(source, { filename: "assets/js/app.js" })).not.toThrow();
+  });
+
 });
