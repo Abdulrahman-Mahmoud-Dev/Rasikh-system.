@@ -31,6 +31,7 @@ const environmentSchema = z
       .min(32, "COOKIE_SECRET must contain at least 32 characters"),
 
     COOKIE_SECURE: booleanFromString.default("false"),
+    COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("lax"),
 
     SESSION_TTL_HOURS: z.coerce
       .number()
@@ -60,6 +61,13 @@ const environmentSchema = z
       .default("info"),
   })
   .superRefine((value, context) => {
+    if (value.COOKIE_SAME_SITE === "none" && !value.COOKIE_SECURE) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["COOKIE_SECURE"],
+        message: "COOKIE_SECURE must be true when COOKIE_SAME_SITE is none.",
+      });
+    }
     if (value.NODE_ENV === "production" && !value.COOKIE_SECURE) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
