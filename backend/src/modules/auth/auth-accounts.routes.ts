@@ -181,7 +181,7 @@ function setSessionCookie(reply: {
   reply.setCookie(SESSION_COOKIE_NAME, session.rawToken, {
     httpOnly: true,
     secure: env.COOKIE_SECURE,
-    sameSite: "lax",
+    sameSite: env.COOKIE_SAME_SITE,
     signed: true,
     path: "/",
     expires: session.expiresAt,
