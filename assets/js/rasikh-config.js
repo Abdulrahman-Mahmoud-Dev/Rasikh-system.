@@ -8,7 +8,7 @@ window.RASIKH_CONFIG = {
 
   // Google OAuth 2.0 Web Client ID (معرّف عام، وليس Client Secret).
   // انسخ القيمة نفسها إلى متغير GOOGLE_CLIENT_ID في أسرار Backend.
-  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_ID: "1062009093851-uqvt6iqc72ak0oq2trr6ij99rs28pngt.apps.googleusercontent.com"
 };
 
 // عنوان واجهة GitHub Pages لهذا المستودع:
