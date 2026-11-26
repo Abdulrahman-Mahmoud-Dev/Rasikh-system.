@@ -137,7 +137,7 @@ export async function verifyGoogleIdToken(
   }
 
   const publicKey = createPublicKey({
-    key: jwk as import("node:crypto").JsonWebKey,
+    key: jwk as unknown as import("node:crypto").JsonWebKey,
     format: "jwk",
   });
   const signedContent = Buffer.from(
