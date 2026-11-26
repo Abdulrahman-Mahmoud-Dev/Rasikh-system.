@@ -11,6 +11,7 @@ import { env } from "./config/env.js";
 import associationsRoutes from "./modules/associations/associations.routes.js";
 import auditRoutes from "./modules/audit/audit.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import authAccountsRoutes from "./modules/auth/auth-accounts.routes.js";
 import educationRoutes from "./modules/education/education.routes.js";
 import peopleRoutes from "./modules/people/people.routes.js";
 import studentsRoutes from "./modules/students/students.routes.js";
@@ -72,6 +73,7 @@ export function buildApp(options?: BuildAppOptions) {
   app.register(
     async (api) => {
       api.register(authRoutes);
+      api.register(authAccountsRoutes);
       api.register(associationsRoutes);
       api.register(peopleRoutes);
       api.register(studentsRoutes);
