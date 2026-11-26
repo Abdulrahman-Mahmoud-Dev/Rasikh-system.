@@ -164,15 +164,19 @@ async function acceptPendingInvitation(){
 }
 async function loadCurrentAssociation(){refreshPermissions();renderNavigation();if(!state.associationId){renderHome();return}$("#associationSelect").value=state.associationId;await Promise.all([loadHierarchy(),loadStudents()]);renderHome()}
 async function loadHierarchy(){
- const data=await api("/associations/"+state.associationId+"/hierarchy");
- const items=data.items||[];
- state.hierarchy=state.circleOnlyMode&&state.activeCircleId?items.filter(x=>x.circle_id===state.activeCircleId):items;
+ const params=new URLSearchParams();
+ if(state.circleOnlyMode&&state.activeCircleId)params.set("circleId",state.activeCircleId);
+ const suffix=params.size?"?"+params.toString():"";
+ const data=await api("/associations/"+state.associationId+"/hierarchy"+suffix);
+ state.hierarchy=data.items||[];
  renderStructure();populateCircleSelects();
 }
 async function loadStudents(){
- const data=await api("/associations/"+state.associationId+"/students");
- const students=data.students||[];
- state.students=state.circleOnlyMode&&state.activeCircleId?students.filter(s=>s.circleId===state.activeCircleId):students;
+ const params=new URLSearchParams();
+ if(state.circleOnlyMode&&state.activeCircleId)params.set("circleId",state.activeCircleId);
+ const suffix=params.size?"?"+params.toString():"";
+ const data=await api("/associations/"+state.associationId+"/students"+suffix);
+ state.students=data.students||[];
  renderStudents();renderAttendanceRows();
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
