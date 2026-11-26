@@ -282,7 +282,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       reply.setCookie(SESSION_COOKIE_NAME, sessionResult.rawToken, {
         httpOnly: true,
         secure: env.COOKIE_SECURE,
-        sameSite: "lax",
+        sameSite: env.COOKIE_SAME_SITE,
         signed: true,
         path: "/",
         expires: sessionResult.expiresAt,
