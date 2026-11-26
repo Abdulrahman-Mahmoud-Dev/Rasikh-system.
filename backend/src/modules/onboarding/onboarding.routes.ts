@@ -1,12 +1,10 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 
-import { env } from "../../config/env.js";
-import { withTransaction } from "../../db/transaction.js";
+import { withTransaction, type Queryable } from "../../db/transaction.js";
 import { getRequiredAuth, requireAuth } from "../../plugins/authentication.js";
 import { ROLE_DEFAULT_PERMISSIONS } from "../../shared/domain/constants.js";
 import {
-  AppError,
   BadRequestError,
   ConflictError,
   ForbiddenError,
@@ -58,7 +56,7 @@ interface RegistrationStatusRow {
 }
 
 async function createEvaluationSettings(
-  client: { query: (sql: string, values?: unknown[]) => Promise<unknown> },
+  client: Queryable,
   associationId: string,
 ): Promise<void> {
   await client.query(
@@ -333,6 +331,13 @@ const onboardingRoutes: FastifyPluginAsync = async (app) => {
           },
         );
 
+        await client.query(
+          `UPDATE public.quranic_premises
+           SET operational_status = 'active', updated_at = now()
+           WHERE id = $1`,
+          [hierarchy.premiseId],
+        );
+
         await recordAuditEvent(client, {
           associationId,
           actorPersonId: auth.personId,
@@ -499,6 +504,13 @@ const onboardingRoutes: FastifyPluginAsync = async (app) => {
             ],
           );
         }
+
+        await client.query(
+          `UPDATE public.quranic_premises
+           SET operational_status = 'active', updated_at = now()
+           WHERE id = $1`,
+          [hierarchy.premiseId],
+        );
 
         await recordAuditEvent(client, {
           associationId,
