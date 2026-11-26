@@ -71,3 +71,24 @@
  .login-card{width:100%;padding:26px 22px}
  .nav-item span svg{width:21px;height:21px}
 }
+
+/* Mobile shell: sidebar becomes a drawer; the dedicated bottom bar stays visible. */
+@media(max-width:720px){
+ .sidebar{
+  width:min(290px,86vw);height:100vh;position:fixed;inset:0 0 0 auto;
+  transform:translateX(105%);display:flex;flex-direction:column;align-items:stretch;
+  padding:25px 17px calc(22px + env(safe-area-inset-bottom));
+  border-top:0;border-left:1px solid var(--r-border);box-shadow:-15px 0 40px #0002;
+  z-index:16;overflow-y:auto;transition:transform .22s ease
+ }
+ .sidebar.open{transform:translateX(0)}
+ .sidebar .side-brand{display:flex}
+ .sidebar .side-user{display:flex}
+ .sidebar nav{width:auto;display:grid;grid-template-columns:1fr;gap:7px;padding-top:24px}
+ .sidebar .nav-item{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;gap:13px;padding:13px 14px;font-size:14px;white-space:normal}
+ .sidebar .nav-item span{width:26px;line-height:1.2}
+ .mobile-bottom-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;inset:auto 0 0;z-index:12}
+ .main-area{padding-bottom:94px}
+ .content-area{padding-bottom:26px}
+ .mobile-bottom-nav #mobileAdd span{background:transparent;color:var(--r-green);width:auto;height:auto;border-radius:0}
+}
