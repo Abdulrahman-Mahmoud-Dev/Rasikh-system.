@@ -47,7 +47,13 @@
   </div>
  </main>
 </div>
-<nav class="mobile-bottom-nav"><button data-view="home"><span>⌂</span>الرئيسية</button><button data-view="structure"><span>▦</span>الهيكل</button><button id="mobileAdd"><span>＋</span>إضافة</button><button data-view="students"><span>♧</span>الطلاب</button><button data-view="reports"><span>▤</span>المزيد</button></nav>
+<nav class="mobile-bottom-nav" aria-label="التنقل الرئيسي">
+ <button data-view="home" class="active"><span><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>الرئيسية</button>
+ <button data-view="structure"><span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>الهيكل</button>
+ <button id="mobileAdd" type="button"><span><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>إضافة</button>
+ <button data-view="students"><span><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a7 7 0 0 1 14 0v1M17 4a4 4 0 0 1 0 8m2 3a5 5 0 0 1 3 5v1"/></svg></span>الطلاب</button>
+ <button id="mobileMore" type="button"><span><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span>المزيد</button>
+</nav>
 <div class="modal hidden" id="modal"><div class="modal-card"><button class="modal-close" id="closeModal">×</button><div id="modalContent"></div></div></div>
 <script src="assets/js/rasikh-config.js"></script><script src="assets/js/app.js"></script>
 </body></html>
