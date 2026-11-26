@@ -1,10 +1,6 @@
 import { env } from "../../config/env.js";
 import { ServiceUnavailableError } from "../../shared/errors/app-error.js";
 
-interface ResendSendResponse {
-  id?: string;
-}
-
 export async function sendLoginOtpEmail(
   recipientEmail: string,
   otpCode: string,
@@ -70,10 +66,6 @@ export async function sendLoginOtpEmail(
 
   if (!response.ok) {
     // Do not expose provider response details or credentials to the caller.
-    const providerResponse = (await response
-      .json()
-      .catch(() => ({}))) as ResendSendResponse;
-    void providerResponse;
     throw new ServiceUnavailableError(
       "لم تتمكن خدمة البريد من قبول رسالة التحقق. تحقق من إعداد المرسل ونطاق البريد ثم حاول مجددًا.",
       "EMAIL_DELIVERY_FAILED",
