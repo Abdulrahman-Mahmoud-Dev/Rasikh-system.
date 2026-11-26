@@ -50,6 +50,7 @@ function renderNavigation(){
  $("#mobileMore").classList.remove("hidden");
  $("#mobileMenu").classList.toggle("hidden",!canStructure&&!canStudents&&!canAttendance&&!canReports&&!canSettings);
  if($("#addPremiseBtn"))$("#addPremiseBtn").classList.toggle("hidden",!hasPermission("premises:create"));
+ if($("#inviteMemberBtn"))$("#inviteMemberBtn").classList.toggle("hidden",!hasPermission("invitations:create"));
  if($("#addStudentBtn"))$("#addStudentBtn").classList.toggle("hidden",!hasPermission("students:create"));
  if($("#circleForm"))$("#circleForm").classList.toggle("hidden",!hasPermission("circles:create"));
  const first=state.assignments.find(a=>a.association_id===state.associationId);
@@ -212,6 +213,87 @@ async function loadReport(){const period=$("#reportPeriod").value.trim();if(!per
 function openModal(title,body){$("#modalContent").innerHTML="<h3>"+title+"</h3>"+body;$("#modal").classList.remove("hidden")}
 function closeModal(){$("#modal").classList.add("hidden")}
 async function addPremise(){openModal("إضافة مسجد أو مقر قرآني",'<form id="premiseForm"><label>النوع</label><select name="premiseType"><option value="mosque">مسجد</option><option value="quranic_center">مقر قرآني</option></select><label>الاسم</label><input name="name" required minlength="2"><label>المدينة</label><input name="city" required value="جدة"><label>الحي</label><input name="district" required><label>المنطقة الإدارية (اختياري)</label><input name="administrativeRegion"><button class="btn primary" type="submit">حفظ</button></form>');$("#premiseForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.currentTarget));await api("/associations/"+state.associationId+"/premises",{method:"POST",body:JSON.stringify(b)});closeModal();await loadHierarchy();toast("تمت إضافة المسجد أو المقر.")}}
+function invitationRoleOptions(){
+ const roles=roleSet();
+ const options=[];
+ const canInviteLower=["association_manager","association_deputy","branch_manager","branch_deputy","supervisor","supervisor_deputy"].some(r=>roles.has(r));
+ if(canInviteLower){
+  options.push(["teacher","معلم"],["circle_assistant","مساعد حلقة"],["guardian","ولي أمر"]);
+ }else if(roles.has("teacher")){
+  options.push(["guardian","ولي أمر"]);
+ }
+ return options;
+}
+function openInvitationDialog(){
+ if(!hasPermission("invitations:create")){
+  toast("ليس لديك صلاحية إرسال الدعوات.");return;
+ }
+ const roles=invitationRoleOptions();
+ if(!roles.length){toast("لا يوجد دور يمكنك إسناده من صلاحيات حسابك.");return;}
+ const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{
+  id:x.circle_id,name:x.circle_name,premiseName:x.premise_name
+ }])).values()];
+ const students=state.students.filter(x=>x.id);
+ const roleOptions=roles.map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join("");
+ const circleOptions=circles.map(x=>'<option value="'+x.id+'">'+esc(x.name)+(x.premiseName?" — "+esc(x.premiseName):"")+'</option>').join("");
+ const studentOptions=students.map(x=>'<option value="'+x.id+'">'+esc(x.fullName)+(x.circleName?" — "+esc(x.circleName):"")+'</option>').join("");
+ openModal("إرسال دعوة بالبريد الإلكتروني",
+  '<p class="muted">سيصل للمدعو إشعار بالإضافة فقط. إذا كان لديه حساب سيُضاف إليه الدور، وإن لم يكن لديه حساب فينشئه بالبريد نفسه.</p>'+
+  '<form id="inviteMemberForm" class="invite-form">'+
+   '<label for="inviteRole">الدور المطلوب إسناده</label><select id="inviteRole" required>'+roleOptions+'</select>'+
+   '<label for="inviteEmail">البريد الإلكتروني للمدعو</label><input id="inviteEmail" type="email" autocomplete="email" required placeholder="name@example.com">'+
+   '<label for="invitePhone">رقم الجوال (اختياري)</label><input id="invitePhone" type="tel" inputmode="tel" placeholder="05xxxxxxxx">'+
+   '<div id="inviteCircleWrap"><label for="inviteCircle">الحلقة التي سيعمل بها</label><select id="inviteCircle" required>'+circleOptions+'</select></div>'+
+   '<div id="inviteStudentWrap" class="hidden"><label for="inviteStudent">الطالب المرتبط بولي الأمر</label><select id="inviteStudent" required>'+studentOptions+'</select><label for="inviteRelationship">صلة القرابة</label><input id="inviteRelationship" value="ولي أمر" maxlength="64"></div>'+
+   '<p id="inviteFormMessage" class="form-message" role="status"></p>'+
+   '<button class="btn primary full" type="submit">إرسال الإشعار</button>'+
+  '</form>');
+ const form=$("#inviteMemberForm"),role=$("#inviteRole"),circleWrap=$("#inviteCircleWrap"),studentWrap=$("#inviteStudentWrap");
+ const roleNeedsCircle=()=>role.value==="teacher"||role.value==="circle_assistant";
+ const updateFields=()=>{
+  const guardian=role.value==="guardian";
+  circleWrap.classList.toggle("hidden",!roleNeedsCircle());
+  studentWrap.classList.toggle("hidden",!guardian);
+  $("#inviteCircle").required=roleNeedsCircle();
+  $("#inviteStudent").required=guardian;
+  if(guardian&&!students.length)$("#inviteFormMessage").textContent="لا توجد ملفات طلاب ضمن نطاق صلاحيتك لربط ولي الأمر.";
+  else $("#inviteFormMessage").textContent="";
+ };
+ role.onchange=updateFields;updateFields();
+ form.onsubmit=async e=>{
+  e.preventDefault();
+  const roleCode=role.value,guardian=roleCode==="guardian";
+  if(roleNeedsCircle()&&!circles.length){$("#inviteFormMessage").textContent="لا توجد حلقة متاحة ضمن نطاق صلاحيتك.";return;}
+  if(guardian&&!students.length){$("#inviteFormMessage").textContent="لا توجد ملفات طلاب ضمن نطاق صلاحيتك.";return;}
+  const body={
+   inviteType:guardian?"guardian_link":"staff_role",
+   recipientEmail:$("#inviteEmail").value.trim().toLowerCase(),
+   roleCode,
+   scopeType:guardian?"guardian_children":"circle",
+   expiresInHours:72
+  };
+  const phone=$("#invitePhone").value.trim();if(phone)body.recipientPhone=phone;
+  if(guardian){
+   body.targetStudentId=$("#inviteStudent").value;
+   body.relationshipLabel=$("#inviteRelationship").value.trim()||"ولي أمر";
+  }else{
+   body.circleId=$("#inviteCircle").value;
+  }
+  const submit=form.querySelector('button[type="submit"]');
+  submit.disabled=true;submit.textContent="جارٍ إرسال الإشعار…";
+  try{
+   const result=await api("/associations/"+state.associationId+"/invitations",{
+    method:"POST",body:JSON.stringify(body)
+   });
+   closeModal();
+   const assigned=result.invitation?.membershipAssigned;
+   toast(assigned?"وصل إشعار البريد وأُسند الدور إلى الحساب الموجود.":"تم إرسال إشعار الإضافة إلى البريد الإلكتروني.");
+  }catch(err){
+   $("#inviteFormMessage").textContent=err.message;
+   submit.disabled=false;submit.textContent="إرسال الإشعار";
+  }
+ };
+}
 async function addStudent(){const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{id:x.circle_id,name:x.circle_name}])).values()];openModal("إضافة طالب",'<form id="newStudentForm"><label>اسم الطالب</label><input name="fullName" required minlength="3"><label>رقم الجوال</label><input name="phone" required placeholder="05xxxxxxxx" inputmode="tel"><label>البريد الإلكتروني</label><input name="email" type="email" required><label>الحلقة</label><select name="circleId" required>'+circles.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("")+'</select><label>الأجزاء المحفوظة سابقًا</label><input name="previousMemorizedJuz" type="number" min="0" max="30" value="0"><button class="btn primary" type="submit">إضافة الطالب</button></form>');$("#newStudentForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.currentTarget));b.previousMemorizedJuz=Number(b.previousMemorizedJuz);await api("/associations/"+state.associationId+"/students",{method:"POST",body:JSON.stringify(b)});closeModal();await loadStudents();renderHome();toast("تم تسجيل الطالب.")}}
 async function createCircle(e){e.preventDefault();const b={quranicPremiseId:$("#circlePremise").value,name:$("#circleName").value.trim(),studyPeriod:$("#circlePeriod").value,targetStage:$("#circleStage").value.trim()||undefined};await api("/associations/"+state.associationId+"/circles",{method:"POST",body:JSON.stringify(b)});e.target.reset();await loadHierarchy();toast("تم إنشاء الحلقة.")}
 async function checkApi(){const r=await fetch(API+"/health/ready",{credentials:"include"});const d=await r.json();$("#apiStatus").textContent=r.ok?"الخادم وقاعدة البيانات متصلان.":"الخادم غير جاهز: "+(d.database||r.status)}
@@ -311,6 +393,7 @@ $("#mobileMore").onclick=()=>{
  openModal("المزيد",'<div class="quick-actions">'+items.join("")+'</div>');
 };
 $("#logoutBtn").onclick=$("#logoutSettings").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}"});}catch{}location.reload();};
+$("#inviteMemberBtn").onclick=()=>openInvitationDialog();
 $("#addPremiseBtn").onclick=()=>addPremise();$("#addStudentBtn").onclick=()=>addStudent();$("#circleForm").onsubmit=async e=>{try{await createCircle(e);}catch(err){toast(err.message);}};
 $("#studentSearch").oninput=renderStudents;$("#studentCircleFilter").onchange=renderStudents;$("#studentStatusFilter").onchange=renderStudents;
 $("#attendanceCircle").onchange=()=>{state.attendance={};renderAttendanceRows();};$("#attendanceDate").onchange=()=>{state.attendance={};renderAttendanceRows();};
@@ -323,7 +406,7 @@ $("#modalContent").onclick=e=>{
  if(e.target.id==="quickPremise"){closeModal();addPremise();}
  if(e.target.id==="quickStudent"){closeModal();addStudent();}
  if(e.target.id==="quickCircle"){closeModal();nav("structure");$("#circleName").focus();}
- if(e.target.id==="quickInvitation"){closeModal();toast("واجهة الدعوات ستكتمل في المرحلة التالية.");}
+ if(e.target.id==="quickInvitation"){closeModal();openInvitationDialog();}
  if(e.target.id==="moreAttendance"){closeModal();nav("attendance");}
  if(e.target.id==="moreReports"){closeModal();nav("reports");}
  if(e.target.id==="moreSettings"){closeModal();nav("settings");}
