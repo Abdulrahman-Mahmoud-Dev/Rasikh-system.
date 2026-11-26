@@ -178,3 +178,9 @@
  .assigned-context{max-width:132px;font-size:10px}
  #changeAssignedCircle{font-size:10px;padding:7px 8px}
 }
+
+.page-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.invite-form{display:flex;flex-direction:column;gap:9px}
+.invite-form label{font-size:14px;font-weight:600;color:var(--r-text);margin-top:6px}
+.invite-form input,.invite-form select{width:100%;min-height:46px;border:1px solid var(--r-border);border-radius:10px;padding:10px 12px;background:#fff;font:inherit}
+.invite-form input:focus,.invite-form select:focus{outline:2px solid #2f6fb326;border-color:#2f6fb3}
