@@ -330,12 +330,25 @@ function showInvitationRegistration(info){
 async function initializeInvitation(token){state.invitationToken=token;const info=await api("/auth/invitations/"+encodeURIComponent(token)+"/preview");showInvitationRegistration(info.invitation);}
 async function finishSessionAndRoute(){if(state.invitationToken){try{await acceptPendingInvitation();}catch(e){msg($("#authMessage"),e.message);return;}}await afterAuthenticated();}
 async function initializeGoogle(){
- const note=$("#googleSetupNote"),slot=$("#googleButton"),clientId=window.RASIKH_CONFIG?.GOOGLE_CLIENT_ID||"";
- if(!API||!clientId){note.classList.remove("hidden");slot.classList.add("hidden");return;}
+ const note=$("#googleSetupNote"),slot=$("#googleButton"),preview=$("#googleButtonPreview"),clientId=window.RASIKH_CONFIG?.GOOGLE_CLIENT_ID||"";
+ const showPreview=text=>{
+  preview.classList.remove("hidden");
+  slot.classList.add("hidden");
+  note.classList.remove("hidden");
+  note.textContent=text;
+ };
+ preview.addEventListener("click",()=>{
+  msg($("#authMessage"),"تم إعداد Google في راسخ، لكن تسجيل الدخول لن يكتمل حتى ننشر الخادم ونربط عنوان API.");
+ });
+ if(!clientId){showPreview("يلزم إكمال إعداد معرّف Google قبل تفعيل تسجيل الدخول.");return;}
+ if(!API){showPreview("معرّف Google جاهز. سيتفعّل تسجيل الدخول بعد ربط الخادم بعنوان API.");return;}
+ preview.classList.add("hidden");
+ note.classList.add("hidden");
+ slot.classList.remove("hidden");
  try{
   const nonceData=await api("/auth/google/nonce",{method:"POST",body:"{}"});
   const ready=()=>{
-   if(!window.google?.accounts?.id){note.classList.remove("hidden");note.textContent="تعذر تحميل تسجيل Google. تحقق من الاتصال ثم أعد تحميل الصفحة.";return;}
+   if(!window.google?.accounts?.id){showPreview("تعذر تحميل خدمة Google. تحقق من الاتصال ثم أعد تحميل الصفحة.");return;}
    window.google.accounts.id.initialize({client_id:clientId,nonce:nonceData.nonce,callback:async response=>{
     try{await api("/auth/google",{method:"POST",body:JSON.stringify({credential:response.credential,nonce:nonceData.nonce})});await finishSessionAndRoute();}
     catch(e){msg($("#authMessage"),e.message);}
@@ -348,10 +361,10 @@ async function initializeGoogle(){
    const googleScript=document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
    if(googleScript){
     googleScript.addEventListener("load",ready,{once:true});
-    googleScript.addEventListener("error",()=>{note.classList.remove("hidden");note.textContent="تعذر تحميل خدمة Google. تحقق من الاتصال ثم أعد المحاولة.";},{once:true});
-   }else{note.classList.remove("hidden");note.textContent="مكتبة تسجيل Google غير موجودة في الصفحة.";}
+    googleScript.addEventListener("error",()=>showPreview("تعذر تحميل خدمة Google. تحقق من الاتصال ثم أعد تحميل الصفحة."),{once:true});
+   }else{showPreview("مكتبة تسجيل Google غير موجودة في الصفحة.");}
   }
- }catch(e){note.classList.remove("hidden");note.textContent=e.message;}
+ }catch(e){showPreview("تعذر الاتصال بخادم راسخ لتجهيز تسجيل Google. تحقق من إعداد API.");}
 }
 async function beginAuthFromUrl(){
  const params=new URLSearchParams(location.search),invitation=params.get("invitation"),verify=params.get("verifyEmail"),reset=params.get("resetPassword");
