@@ -146,6 +146,7 @@ export const ROLE_ASSIGNABLE_ROLES: Record<RoleCode, readonly RoleCode[]> = {
   supervisor: ["supervisor_deputy", "teacher", "circle_assistant", "guardian"],
   supervisor_deputy: ["teacher", "circle_assistant", "guardian"],
   teacher: ["guardian"],
+  circle_assistant: [],
   guardian: [],
 };
 
