@@ -41,6 +41,10 @@ const environmentSchema = z.object({
 
   CORS_ORIGIN: z.string().url(),
 
+  // Resend email delivery. Both values are required when OTP email is requested.
+  RESEND_API_KEY: z.string().min(10).optional(),
+  EMAIL_FROM: z.string().min(3).optional(),
+
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),

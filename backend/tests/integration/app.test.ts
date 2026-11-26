@@ -61,15 +61,19 @@ function createMockPool(options?: { failSelectOne?: boolean }) {
       return makeResult<T>([{ "?column?": 1 } as unknown as T]);
     }
 
+    if (normalized.includes("SELECT EXISTS") && normalized.includes("FROM public.persons p")) {
+      return makeResult<T>([{ account_exists: true } as unknown as T]);
+    }
+
     if (normalized.startsWith("INSERT INTO public.login_challenges")) {
       challenges.push({
         id: String(values[0]),
-        identifier_type: String(values[1]),
-        identifier_value: String(values[2]),
-        otp_hash: String(values[4]),
+        identifier_type: "email",
+        identifier_value: String(values[1]),
+        otp_hash: String(values[2]),
         attempt_count: 0,
-        max_attempts: Number(values[5]),
-        expires_at: String(values[6]),
+        max_attempts: Number(values[3]),
+        expires_at: String(values[4]),
         consumed_at: null,
       });
       return makeResult<T>([]);
@@ -309,8 +313,7 @@ describe("Fastify Backend HTTP Integration", () => {
       method: "POST",
       url: "/api/v1/auth/otp/request",
       payload: {
-        identifierType: "email",
-        identifier: "guardian@rasikh.example",
+        email: "guardian@rasikh.example",
       },
     });
     expect(otpReqRes.statusCode).toBe(200);
@@ -328,8 +331,7 @@ describe("Fastify Backend HTTP Integration", () => {
       method: "POST",
       url: "/api/v1/auth/otp/verify",
       payload: {
-        identifierType: "email",
-        identifier: "guardian@rasikh.example",
+        email: "guardian@rasikh.example",
         code: "000000",
       },
     });
@@ -340,8 +342,7 @@ describe("Fastify Backend HTTP Integration", () => {
       method: "POST",
       url: "/api/v1/auth/otp/verify",
       payload: {
-        identifierType: "email",
-        identifier: "guardian@rasikh.example",
+        email: "guardian@rasikh.example",
         code: "482913",
       },
     });

@@ -9,11 +9,9 @@ import {
   SESSION_COOKIE_NAME,
 } from "../../plugins/authentication.js";
 import {
-  BadRequestError,
   TooManyRequestsError,
   UnauthorizedError,
 } from "../../shared/errors/app-error.js";
-import { normalizeSaudiPhone } from "../../shared/utilities/arabic.js";
 import {
   generateOpaqueToken,
   generateOtpCode,
@@ -22,18 +20,17 @@ import {
   timingSafeHexEqual,
 } from "../../shared/utilities/crypto.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
+import { sendLoginOtpEmail } from "./otp-email.service.js";
 
 const OTP_TTL_MINUTES = 5;
 const OTP_MAX_ATTEMPTS = 5;
 
 const otpRequestSchema = z.object({
-  identifierType: z.enum(["email", "phone"]),
-  identifier: z.string().min(3).max(255),
+  email: z.string().trim().email().max(255),
 });
 
 const otpVerifySchema = z.object({
-  identifierType: z.enum(["email", "phone"]),
-  identifier: z.string().min(3).max(255),
+  email: z.string().trim().email().max(255),
   code: z.string().regex(/^\d{6}$/, "رمز التحقق يجب أن يتكون من 6 أرقام."),
 });
 
@@ -55,32 +52,6 @@ interface AccountLookupRow {
   platform_role: "platform_admin" | "platform_deputy" | null;
 }
 
-function normalizeIdentifier(
-  identifierType: "email" | "phone",
-  rawValue: string,
-): string {
-  if (identifierType === "email") {
-    const email = rawValue.trim().toLowerCase();
-    const parsed = z.string().email().safeParse(email);
-    if (!parsed.success) {
-      throw new BadRequestError(
-        "صيغة البريد الإلكتروني غير صحيحة.",
-        "INVALID_EMAIL",
-      );
-    }
-    return parsed.data;
-  }
-
-  const normalizedPhone = normalizeSaudiPhone(rawValue);
-  if (!normalizedPhone) {
-    throw new BadRequestError(
-      "رقم الجوال يجب أن يكون بصيغة سعودية صحيحة تبدأ بـ 05.",
-      "INVALID_PHONE",
-    );
-  }
-  return normalizedPhone;
-}
-
 const authRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     "/auth/otp/request",
@@ -94,15 +65,35 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const body = otpRequestSchema.parse(request.body);
-      const normalizedIdentifier = normalizeIdentifier(
-        body.identifierType,
-        body.identifier,
+      const normalizedEmail = body.email.trim().toLowerCase();
+
+      // Only send sign-in codes to email addresses linked to active accounts.
+      const accountLookup = await app.db.query<{ account_exists: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1
+           FROM public.persons p
+           INNER JOIN public.user_accounts ua ON ua.person_id = p.id
+           WHERE lower(btrim(p.email)) = $1
+             AND p.lifecycle_status = 'active'
+             AND ua.status <> 'disabled'
+         ) AS account_exists`,
+        [normalizedEmail],
       );
+
+      if (!accountLookup.rows[0]?.account_exists) {
+        return reply.status(200).send({
+          message: "إذا كان البريد الإلكتروني مرتبطًا بحساب نشط، فسيصلك رمز التحقق.",
+          expiresInSeconds: OTP_TTL_MINUTES * 60,
+        });
+      }
 
       const otpCode = generateOtpCode();
       const otpHash = hashSecret(otpCode, env.COOKIE_SECRET);
       const challengeId = generateUuid();
       const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60_000);
+
+      // Do not claim success unless the email provider accepts the message.
+      await sendLoginOtpEmail(normalizedEmail, otpCode, challengeId);
 
       await app.db.query(
         `INSERT INTO public.login_challenges (
@@ -114,29 +105,23 @@ const authRoutes: FastifyPluginAsync = async (app) => {
            max_attempts,
            expires_at
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         VALUES ($1, 'email', $2, 'email', $3, $4, $5)`,
         [
           challengeId,
-          body.identifierType,
-          normalizedIdentifier,
-          body.identifierType,
+          normalizedEmail,
           otpHash,
           OTP_MAX_ATTEMPTS,
           expiresAt.toISOString(),
         ],
       );
 
-      // Never return or log the plaintext OTP code in production responses or logs.
       request.log.info(
-        {
-          challengeId,
-          channel: body.identifierType,
-        },
-        "Login OTP challenge created",
+        { challengeId, channel: "email" },
+        "Login OTP email accepted by provider",
       );
 
       return reply.status(200).send({
-        message: "إذا كانت البيانات مسجلة لدينا، فسيتم إرسال رمز التحقق.",
+        message: "تم إرسال طلب رمز التحقق إلى بريدك الإلكتروني. تحقق أيضًا من مجلد الرسائل غير المرغوب فيها.",
         expiresInSeconds: OTP_TTL_MINUTES * 60,
       });
     },
@@ -154,10 +139,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const body = otpVerifySchema.parse(request.body);
-      const normalizedIdentifier = normalizeIdentifier(
-        body.identifierType,
-        body.identifier,
-      );
+      const normalizedEmail = body.email.trim().toLowerCase();
 
       const sessionResult = await withTransaction(app.db, async (client) => {
         const challengeRes = await client.query<ChallengeRow>(
@@ -174,7 +156,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
            ORDER BY created_at DESC
            LIMIT 1
            FOR UPDATE`,
-          [body.identifierType, normalizedIdentifier],
+          ["email", normalizedEmail],
         );
 
         const challenge = challengeRes.rows[0];
@@ -214,34 +196,20 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         }
 
         const accountRes = await client.query<AccountLookupRow>(
-          body.identifierType === "email"
-            ? `SELECT
-                 ua.id AS account_id,
-                 p.id AS person_id,
-                 p.full_name,
-                 p.file_number,
-                 ua.status AS account_status,
-                 ua.platform_role
-               FROM public.persons p
-               INNER JOIN public.user_accounts ua
-                 ON ua.person_id = p.id
-               WHERE lower(btrim(p.email)) = $1
-                 AND p.lifecycle_status = 'active'
-               LIMIT 1`
-            : `SELECT
-                 ua.id AS account_id,
-                 p.id AS person_id,
-                 p.full_name,
-                 p.file_number,
-                 ua.status AS account_status,
-                 ua.platform_role
-               FROM public.persons p
-               INNER JOIN public.user_accounts ua
-                 ON ua.person_id = p.id
-               WHERE p.phone = $1
-                 AND p.lifecycle_status = 'active'
-               LIMIT 1`,
-          [normalizedIdentifier],
+          `SELECT
+             ua.id AS account_id,
+             p.id AS person_id,
+             p.full_name,
+             p.file_number,
+             ua.status AS account_status,
+             ua.platform_role
+           FROM public.persons p
+           INNER JOIN public.user_accounts ua
+             ON ua.person_id = p.id
+           WHERE lower(btrim(p.email)) = $1
+             AND p.lifecycle_status = 'active'
+           LIMIT 1`,
+          [normalizedEmail],
         );
 
         const account = accountRes.rows[0];
@@ -301,7 +269,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
           eventType: "auth.session_created",
           entityType: "auth_session",
           entityId: sessionId,
-          newData: { channel: body.identifierType },
+          newData: { channel: "email" },
         });
 
         return {
