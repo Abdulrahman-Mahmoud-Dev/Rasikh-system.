@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 
+import { env } from "../../config/env.js";
 import { withTransaction } from "../../db/transaction.js";
 import { getRequiredAuth, requireAuth } from "../../plugins/authentication.js";
 import {
