@@ -108,6 +108,7 @@ function isCircleStaffOnly(){
 }
 function showAssignedCircleChooser(choices){
  $("#loginView").classList.add("hidden");$("#onboardingView").classList.add("hidden");$("#appView").classList.add("hidden");
+ $("#assignedContext").classList.add("hidden");$("#changeAssignedCircle").classList.add("hidden");
  $("#assignmentSelectView").classList.remove("hidden");
  $("#assignmentSelectMessage").textContent=choices.length?"اختر الحلقة التي تريد العمل عليها.":"لم يتم إسناد حلقة إلى حسابك حتى الآن. تواصل مع المشرف المسؤول.";
  $("#assignedCircleOptions").innerHTML=choices.map((item,index)=>
@@ -148,6 +149,7 @@ async function routeAuthenticatedUser(){
   showAssignedCircleChooser(choices);return;
  }
  state.circleOnlyMode=false;state.activeCircleId=null;state.activeAssignedWorkspace=null;
+ $("#associationSelect").classList.remove("hidden");$("#assignedContext").classList.add("hidden");$("#changeAssignedCircle").classList.add("hidden");
  if(!state.assignments.length){await showOnboarding();return;}
  showApp();
  const landing=state.roles.every(r=>r==="guardian")?"students":"home";
@@ -278,7 +280,8 @@ async function boot(){
  try{await routeAuthenticatedUser();}
  catch(e){if(!API){msg($("#authMessage"),"عنوان الخادم غير مضبوط في assets/js/rasikh-config.js. إعداد API_BASE_URL مطلوب لتشغيل الدخول.");}else{msg($("#authMessage"),"سجّل الدخول للمتابعة.");}}
 }
-$("#assignmentLogout").onclick=$("#changeAssignedCircle").onclick=async()=>{if($("#changeAssignedCircle").classList.contains("hidden")){try{await api("/auth/logout",{method:"POST",body:"{}"});}catch{}location.reload();return;}showAssignedCircleChooser(getAssignedCircleChoices());};
+$("#assignmentLogout").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}");}catch{}location.reload();};
+$("#changeAssignedCircle").onclick=()=>showAssignedCircleChooser(getAssignedCircleChoices());
 $("#assignedCircleOptions").onclick=async e=>{const button=e.target.closest("[data-assigned-index]");if(!button)return;const choice=state.availableAssignedChoices[Number(button.dataset.assignedIndex)];if(!choice)return;try{await enterAssignedCircle(choice);}catch(err){msg($("#assignmentSelectMessage"),err.message);}};
 $("#passwordLoginForm").onsubmit=submitPasswordLogin;$("#registerForm").onsubmit=submitRegistration;$("#invitationRegisterForm").onsubmit=submitInvitationRegistration;$("#resetRequestForm").onsubmit=submitResetRequest;$("#resetConfirmForm").onsubmit=submitResetConfirm;
 $("#tabLogin").onclick=()=>setAuthMode("login");$("#tabRegister").onclick=()=>setAuthMode("register");$("#forgotPasswordBtn").onclick=showForgotPassword;$("#existingInviteAccount").onclick=()=>{setAuthMode("login");$("#loginEmail").value=state.invitationInfo?.email||"";};
