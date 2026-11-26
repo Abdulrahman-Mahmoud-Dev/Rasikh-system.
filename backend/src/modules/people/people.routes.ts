@@ -272,19 +272,100 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         }
       }
 
+      // Resolve the real target scope on the server. Never trust a caller to
+      // claim that a circle or student belongs to a branch/premise they manage.
+      let invitationTargetScope: {
+        branchId?: string | null;
+        quranicPremiseId?: string | null;
+        circleId?: string | null;
+        guardianStudentId?: string | null;
+      } = {
+        branchId: body.branchId,
+        quranicPremiseId: body.quranicPremiseId,
+        circleId: body.circleId,
+      };
+
+      if (body.roleCode === "teacher" || body.roleCode === "circle_assistant") {
+        const circleResult = await app.db.query<{
+          circle_id: string;
+          quranic_premise_id: string;
+          branch_id: string;
+          operational_status: string;
+        }>(
+          `SELECT c.id AS circle_id, c.quranic_premise_id,
+                  qp.branch_id, c.operational_status
+           FROM public.circles c
+           INNER JOIN public.quranic_premises qp
+             ON qp.id = c.quranic_premise_id
+            AND qp.association_id = c.association_id
+           WHERE c.id = $1 AND c.association_id = $2
+           LIMIT 1`,
+          [body.circleId, associationId],
+        );
+        const circle = circleResult.rows[0];
+        if (!circle) {
+          throw new NotFoundError(
+            "الحلقة المحددة غير موجودة في هذه الجهة.",
+            "INVITATION_CIRCLE_NOT_FOUND",
+          );
+        }
+        if (circle.operational_status === "closed") {
+          throw new BadRequestError(
+            "لا يمكن إسناد معلم أو مساعد إلى حلقة مغلقة.",
+            "INVITATION_CIRCLE_CLOSED",
+          );
+        }
+        invitationTargetScope = {
+          branchId: circle.branch_id,
+          quranicPremiseId: circle.quranic_premise_id,
+          circleId: circle.circle_id,
+        };
+      }
+
+      if (body.inviteType === "guardian_link" && body.targetStudentId) {
+        const studentScopeResult = await app.db.query<{
+          branch_id: string;
+          quranic_premise_id: string;
+          circle_id: string;
+        }>(
+          `SELECT qp.branch_id, qp.id AS quranic_premise_id, c.id AS circle_id
+           FROM public.students s
+           INNER JOIN public.student_circle_enrollments e
+             ON e.student_id = s.id
+            AND e.association_id = s.association_id
+            AND e.ended_at IS NULL
+           INNER JOIN public.circles c
+             ON c.id = e.circle_id AND c.association_id = s.association_id
+           INNER JOIN public.quranic_premises qp
+             ON qp.id = c.quranic_premise_id
+            AND qp.association_id = s.association_id
+           WHERE s.id = $1 AND s.association_id = $2
+           LIMIT 1`,
+          [body.targetStudentId, associationId],
+        );
+        const studentScope = studentScopeResult.rows[0];
+        if (!studentScope) {
+          throw new NotFoundError(
+            "الطالب المحدد غير موجود أو ليس في حلقة نشطة.",
+            "INVITATION_STUDENT_NOT_FOUND",
+          );
+        }
+        invitationTargetScope = {
+          branchId: studentScope.branch_id,
+          quranicPremiseId: studentScope.quranic_premise_id,
+          circleId: studentScope.circle_id,
+          guardianStudentId: body.targetStudentId,
+        };
+      }
+
       const authz = await authorizeAssociationAction(
         request,
         app.db,
         associationId,
         "invitations:create",
         {
-          targetScope: {
-            branchId: body.branchId,
-            quranicPremiseId: body.quranicPremiseId,
-            circleId: body.circleId,
-            guardianStudentId: body.targetStudentId,
-          },
-          allowScopedListEntry: body.inviteType === "guardian_link",
+          targetScope: invitationTargetScope,
+          allowScopedListEntry: false,
         },
       );
 
