@@ -41,9 +41,11 @@ $("#verifyBtn").onclick=async()=>{try{await verifyOtp()}catch(e){msg($("#loginMe
 $$(".segmented button").forEach(b=>b.onclick=()=>{state.method=b.dataset.method;$$(".segmented button").forEach(x=>x.classList.toggle("active",x===b));$("#identifier").type=state.method==="email"?"email":"tel";$("#identifier").placeholder=state.method==="email"?"name@example.com":"05xxxxxxxx";$("label[for=identifier]").textContent=state.method==="email"?"البريد الإلكتروني":"رقم الجوال"});
 $("#associationSelect").onchange=async e=>{state.associationId=e.target.value;try{await loadCurrentAssociation()}catch(err){toast(err.message)}};
 $("#sideNav").onclick=e=>{const b=e.target.closest("[data-view]");if(b)nav(b.dataset.view)};
+$(".mobile-bottom-nav").onclick=e=>{const b=e.target.closest("[data-view]");if(b)nav(b.dataset.view)};
 $("#content").onclick=e=>{const b=e.target.closest("[data-go]");if(b)nav(b.dataset.go)};
 $("#mobileMenu").onclick=()=>$(".sidebar").classList.toggle("open");
 $("#mobileAdd").onclick=()=>{openModal("إضافة جديدة",'<div class="quick-actions"><button id="quickPremise">إضافة مسجد أو مقر</button><button id="quickStudent">إضافة طالب</button><button id="quickCircle">إنشاء حلقة</button></div>')};
+$("#mobileMore").onclick=()=>{openModal("المزيد",'<div class="quick-actions"><button id="moreAttendance">الرصد اليومي</button><button id="moreReports">التقارير</button><button id="moreSettings">الإعدادات</button></div>')};
 $("#logoutBtn").onclick=$("#logoutSettings").onclick=async()=>{try{await api("/auth/logout",{method:"POST",body:"{}"})}catch{}location.reload()};
 $("#addPremiseBtn").onclick=()=>addPremise();$("#addStudentBtn").onclick=()=>addStudent();$("#circleForm").onsubmit=async e=>{try{await createCircle(e)}catch(err){toast(err.message)}};
 $("#studentSearch").oninput=renderStudents;$("#studentCircleFilter").onchange=renderStudents;$("#studentStatusFilter").onchange=renderStudents;
@@ -52,7 +54,7 @@ $("#markAllPresent").onclick=()=>{state.students.filter(s=>s.circleId===$("#atte
 $("#saveAttendance").onclick=async()=>{try{await saveAttendance()}catch(e){toast(e.message)}};
 $("#loadReport").onclick=async()=>{try{await loadReport()}catch(e){toast(e.message)}};
 $("#checkApi").onclick=async()=>{try{await checkApi()}catch(e){$("#apiStatus").textContent=e.message}};
-$("#modalContent").onclick=e=>{if(e.target.id==="quickPremise"){closeModal();addPremise()}if(e.target.id==="quickStudent"){closeModal();addStudent()}if(e.target.id==="quickCircle"){closeModal();nav("structure");$("#circleName").focus()}};
+$("#modalContent").onclick=e=>{if(e.target.id==="quickPremise"){closeModal();addPremise()}if(e.target.id==="quickStudent"){closeModal();addStudent()}if(e.target.id==="quickCircle"){closeModal();nav("structure");$("#circleName").focus()}if(e.target.id==="moreAttendance"){closeModal();nav("attendance")}if(e.target.id==="moreReports"){closeModal();nav("reports")}if(e.target.id==="moreSettings"){closeModal();nav("settings")}};
 $("#closeModal").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
 $("#attendanceDate").value=new Date().toISOString().slice(0,10);
 boot();
