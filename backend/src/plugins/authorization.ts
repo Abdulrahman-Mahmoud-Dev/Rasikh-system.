@@ -156,7 +156,9 @@ export async function loadAssociationAuthorization(
      WHERE m.person_id = $1
        AND m.association_id = $2
        AND m.status = 'active'
+       AND m.valid_from <= now()
        AND (m.valid_until IS NULL OR m.valid_until > now())
+       AND ra.valid_from <= now()
        AND (ra.valid_until IS NULL OR ra.valid_until > now())`,
     [personId, associationId],
   );
