@@ -308,6 +308,8 @@ const authRoutes: FastifyPluginAsync = async (app) => {
          m.id AS membership_id,
          m.association_id,
          a.name AS association_name,
+         a.workspace_kind,
+         a.status AS association_status,
          m.status AS membership_status,
          ra.id AS role_assignment_id,
          ra.role_code,
@@ -315,6 +317,10 @@ const authRoutes: FastifyPluginAsync = async (app) => {
          ra.branch_id,
          ra.quranic_premise_id,
          ra.circle_id,
+         COALESCE(ra.quranic_premise_id, circle_premise.id) AS assigned_premise_id,
+         COALESCE(ra.quranic_premise_id, circle_premise.name) AS assigned_premise_name,
+         COALESCE(ra.branch_id, circle_premise.branch_id) AS assigned_branch_id,
+         assigned_branch.display_name AS assigned_branch_name,
          ra.granted_permissions
        FROM public.association_memberships m
        INNER JOIN public.associations a
@@ -322,7 +328,17 @@ const authRoutes: FastifyPluginAsync = async (app) => {
        LEFT JOIN public.role_assignments ra
          ON ra.membership_id = m.id
          AND ra.association_id = m.association_id
-         AND ra.valid_until IS NULL
+         AND ra.valid_from <= now()
+         AND (ra.valid_until IS NULL OR ra.valid_until > now())
+       LEFT JOIN public.circles assigned_circle
+         ON assigned_circle.id = ra.circle_id
+         AND assigned_circle.association_id = ra.association_id
+       LEFT JOIN public.quranic_premises circle_premise
+         ON circle_premise.id = COALESCE(ra.quranic_premise_id, assigned_circle.quranic_premise_id)
+         AND circle_premise.association_id = ra.association_id
+       LEFT JOIN public.branches assigned_branch
+         ON assigned_branch.id = COALESCE(ra.branch_id, circle_premise.branch_id)
+         AND assigned_branch.association_id = ra.association_id
        WHERE m.person_id = $1
          AND m.status = 'active'
        ORDER BY a.name ASC`,
