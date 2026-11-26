@@ -33,7 +33,7 @@ function renderNavigation(){
  const canReports=hasPermission("reports:read");
  const canSettings=hasAnyPermission(["settings:manage","evaluations:manage"]);
  const canAdd=hasAnyPermission(["premises:create","circles:create","students:create","people:create","invitations:create","roles:assign"]);
- const allowed={home:true,structure:canStructure,students:canStudents,attendance:canAttendance,reports:canReports,settings:canSettings};
+ const allowed={home:!state.circleOnlyMode,structure:canStructure,students:canStudents,attendance:canAttendance,reports:canReports,settings:canSettings};
  $$("#sideNav [data-view]").forEach(b=>b.classList.toggle("hidden",!allowed[b.dataset.view]));
  const sideStructure=$("#sideNav [data-view=structure]");
  if(sideStructure)sideStructure.lastChild.textContent=teaching?"حلقاتي":supervisory?"المساجد والمقرات":"الهيكل التنظيمي";
