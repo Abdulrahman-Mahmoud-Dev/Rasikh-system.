@@ -5,7 +5,7 @@
 
 .mobile-bottom-nav{display:none}
 .attendance-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
-@media(max-width:720px){.mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);inset:auto 0 0;background:#fff;border-top:1px solid var(--r-border);padding:7px 5px calc(7px + env(safe-area-inset-bottom));z-index:8;box-shadow:0 -4px 18px #0b1f3f0b}.mobile-bottom-nav button{border:0;background:transparent;color:#687780;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px}.mobile-bottom-nav button span{font-size:21px;line-height:1.2;color:var(--r-green)}.mobile-bottom-nav button.active{color:var(--r-green)}.mobile-bottom-nav #mobileAdd{color:var(--r-green);font-weight:800}.mobile-bottom-nav #mobileAdd span{background:var(--r-green);color:#fff;border-radius:14px;width:34px;height:30px;display:grid;place-items:center}.content-area{padding-bottom:95px}.attendance-actions{align-items:flex-start;flex-direction:column}}
+@media(max-width:720px){.mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));inset:auto 0 0;background:#fff;border-top:1px solid var(--r-border);padding:7px 5px calc(7px + env(safe-area-inset-bottom));z-index:8;box-shadow:0 -4px 18px #0b1f3f0b}.mobile-bottom-nav button{border:0;background:transparent;color:#687780;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px}.mobile-bottom-nav button span{font-size:21px;line-height:1.2;color:var(--r-green)}.mobile-bottom-nav button.active{color:var(--r-green)}.mobile-bottom-nav #mobileAdd{color:var(--r-green);font-weight:800}.mobile-bottom-nav #mobileAdd span{background:var(--r-green);color:#fff;border-radius:14px;width:34px;height:30px;display:grid;place-items:center}.content-area{padding-bottom:95px}.attendance-actions{align-items:flex-start;flex-direction:column}}
 /* الهوية المعتمدة في Rasikh-UI-Designs.pdf — دستور 1.5 */
 .sidebar{background:#fff;color:var(--r-text);border-left:1px solid var(--r-border);box-shadow:none}
 .side-brand{border-bottom-color:var(--r-border)}
@@ -62,7 +62,6 @@
 .login-view{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px;background:var(--r-bg)}
 .login-art{display:none}
 .login-card{align-self:center;justify-self:center;width:min(440px,100%);margin:0;padding:34px;border-color:var(--r-border);box-shadow:0 8px 28px #0B1F3F0A}
-.login-card:before{content:"راسخ";display:block;text-align:center;color:var(--r-navy);font-size:30px;font-weight:700;margin:0 0 16px}
 .login-card h2{color:var(--r-navy)}
 .login-card .btn.primary{background:var(--r-green)}
 .nav-item span svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -87,7 +86,7 @@
  .sidebar nav{width:auto;display:grid;grid-template-columns:1fr;gap:7px;padding-top:24px}
  .sidebar .nav-item{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;gap:13px;padding:13px 14px;font-size:14px;white-space:normal}
  .sidebar .nav-item span{width:26px;line-height:1.2}
- .mobile-bottom-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;inset:auto 0 0;z-index:12}
+ .mobile-bottom-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;inset:auto 0 0;z-index:12}
  .main-area{padding-bottom:94px}
  .content-area{padding-bottom:26px}
  .mobile-bottom-nav #mobileAdd span{background:transparent;color:var(--r-green);width:auto;height:auto;border-radius:0}
@@ -97,3 +96,91 @@
  .mobile-bottom-nav button span svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 }
 .brand-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:inherit}
+
+/* Authentication and onboarding: royal navy identity, responsive RTL */
+.auth-card{max-width:560px;width:min(560px,92%);display:flex;flex-direction:column;gap:10px}
+.auth-brand{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.auth-brand h2{margin:0;color:var(--r-navy);font-size:25px}
+.auth-brand p{margin:3px 0 0;font-size:12px}
+.brand-square,.workspace-icon{width:54px;height:54px;display:grid;place-items:center;flex:none;border:1.6px solid var(--r-navy);border-radius:15px;background:#fff;color:var(--r-navy)}
+.brand-letter{font-size:31px;font-weight:700;color:var(--r-navy)}
+.auth-card .eyebrow{margin-top:10px}
+.google-auth-block{margin:8px 0 2px}
+.google-button-slot{min-height:44px;display:flex;justify-content:center;width:100%}
+.google-button-slot>div{max-width:100%}
+.setup-note{font-size:12px;color:#9b5c22;background:#fff8e9;border:1px solid #f1d8a8;border-radius:10px;padding:9px 12px;line-height:1.7}
+.auth-divider{display:flex;align-items:center;gap:12px;color:var(--r-muted);font-size:12px;margin:4px 0}
+.auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--r-border);flex:1}
+.auth-tabs{display:flex;gap:7px;padding:4px;background:#f2f4f7;border-radius:12px;margin:4px 0}
+.auth-tabs button{flex:1;border:0;border-radius:9px;padding:10px;background:transparent;color:var(--r-muted);font-weight:600}
+.auth-tabs button.active{background:#fff;color:var(--r-navy);box-shadow:0 1px 5px #0b1f3f14}
+.auth-form{display:flex;flex-direction:column;gap:7px}
+.auth-form label{display:block;font-size:14px;font-weight:600;margin-top:8px}
+.auth-form input{width:100%;border:1px solid #d5dce5;border-radius:12px;padding:13px 14px;background:#fff;min-height:49px}
+.auth-form input:focus{outline:0;border-color:var(--r-navy);box-shadow:0 0 0 3px #0b1f3f12}
+.auth-form input[readonly]{background:#f5f6f8;color:#536273;direction:ltr;text-align:left}
+.auth-form .btn.primary{background:var(--r-navy)}
+.auth-form .btn.full{margin-top:12px;min-height:50px}
+.text-link{border:0;background:transparent;color:var(--r-navy);font-weight:600;padding:9px 4px;text-align:center}
+.field-hint{font-size:12px;color:var(--r-muted);line-height:1.8;margin:0}
+.secure-note{border-top:1px solid var(--r-border);margin:8px 0 0;padding-top:12px;color:var(--r-muted);font-size:11px}
+.invitation-summary{padding:12px;border:1px solid var(--r-border);background:#f8fafc;border-radius:12px;line-height:1.8;font-size:13px}
+.onboarding-view{min-height:100vh;padding:42px 18px;background:var(--r-bg)}
+.onboarding-shell{max-width:920px;margin:0 auto}
+.onboarding-heading{text-align:center;margin-bottom:26px}
+.onboarding-heading h1{font-size:30px;color:var(--r-navy);margin:6px 0}
+.onboarding-heading p{margin:0}
+.workspace-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.workspace-option{background:#fff;border:1px solid var(--r-border);border-radius:18px;padding:22px;min-height:176px;text-align:right;display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:border-color .18s,transform .18s}
+.workspace-option:hover{border-color:var(--r-navy);transform:translateY(-2px)}
+.workspace-icon{width:48px;height:48px;border-radius:13px;font-size:24px}
+.workspace-icon span{font-weight:700}
+.workspace-option:nth-child(1) .workspace-icon span{color:#2f6fb3}
+.workspace-option:nth-child(2) .workspace-icon span{color:#1e6f5c}
+.workspace-option:nth-child(3) .workspace-icon span{color:#d2a24f}
+.workspace-option:nth-child(4) .workspace-icon span{color:#7a62a3}
+.workspace-option strong{color:var(--r-navy);font-size:17px}
+.workspace-option small{font-size:13px;color:var(--r-muted);line-height:1.7}
+.workspace-form{max-width:620px;margin:24px auto 0;background:#fff;padding:26px;border:1px solid var(--r-border);border-radius:18px}
+.workspace-form h2{color:var(--r-navy);margin:8px 0}
+.workspace-form label{display:block;font-weight:600;font-size:14px;margin:14px 0 7px}
+.workspace-form input,.workspace-form select{width:100%;min-height:48px;border:1px solid #d5dce5;border-radius:11px;padding:11px 13px;background:#fff}
+.workspace-form .btn.primary{background:var(--r-navy)}
+.pending-registration{margin:0 auto 20px;max-width:650px;background:#fff8e9;border:1px solid #f0d59c;color:#80591d;padding:14px 17px;border-radius:13px;line-height:1.8}
+@media(max-width:760px){
+ .login-view{display:flex;align-items:center;justify-content:center;min-height:100svh;padding:18px 12px;background:var(--r-bg)}
+ .login-art{display:none}
+ .auth-card{width:100%;max-width:560px;padding:26px 22px;border-radius:22px;box-shadow:none}
+ .auth-card h2{font-size:25px}
+ .workspace-options{grid-template-columns:1fr}
+ .onboarding-view{padding:26px 13px}
+ .onboarding-heading h1{font-size:25px}
+ .workspace-option{min-height:145px;padding:18px}
+ .workspace-form{padding:19px}
+}
+
+/* Assigned circle chooser: only circles returned by the authenticated API are shown. */
+.assignment-select-view{min-height:100vh;padding:38px 18px;background:var(--r-bg)}
+.assignment-select-shell{max-width:860px;margin:0 auto}
+.assignment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.assignment-option{position:relative;background:#fff;border:1px solid var(--r-border);border-radius:16px;padding:20px 20px 20px 68px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:right;min-height:146px;transition:border-color .18s,transform .18s}
+.assignment-option:hover{border-color:var(--r-navy);transform:translateY(-2px)}
+.assignment-option strong{font-size:18px;color:var(--r-navy)}
+.assignment-option>span:not(.assignment-number){font-size:13px;color:var(--r-muted)}
+.assignment-option small{font-size:12px;color:var(--r-muted);line-height:1.6}
+.assignment-number{position:absolute;left:18px;top:19px;width:34px;height:34px;border-radius:11px;background:#edf1f7;color:var(--r-navy);font-weight:700;display:grid;place-items:center}
+.assigned-context{max-width:230px;color:var(--r-navy);font-size:12px;font-weight:600;line-height:1.5}
+#changeAssignedCircle{font-size:12px;padding:8px 10px}
+@media(max-width:720px){
+ .assignment-select-view{padding:24px 13px}
+ .assignment-grid{grid-template-columns:1fr}
+ .assignment-option{min-height:126px}
+ .assigned-context{max-width:132px;font-size:10px}
+ #changeAssignedCircle{font-size:10px;padding:7px 8px}
+}
+
+.page-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.invite-form{display:flex;flex-direction:column;gap:9px}
+.invite-form label{font-size:14px;font-weight:600;color:var(--r-text);margin-top:6px}
+.invite-form input,.invite-form select{width:100%;min-height:46px;border:1px solid var(--r-border);border-radius:10px;padding:10px 12px;background:#fff;font:inherit}
+.invite-form input:focus,.invite-form select:focus{outline:2px solid #2f6fb326;border-color:#2f6fb3}

@@ -123,6 +123,7 @@ const associationsRoutes: FastifyPluginAsync = async (app) => {
     { preHandler: requireAuth },
     async (request, reply) => {
       const { associationId } = associationParamsSchema.parse(request.params);
+      const query = z.object({ circleId: z.string().uuid().optional() }).parse(request.query);
       const authz = await authorizeAssociationAction(
         request,
         app.db,
@@ -139,14 +140,21 @@ const associationsRoutes: FastifyPluginAsync = async (app) => {
         scopes.premiseIds.length === 0 &&
         scopes.circleIds.length === 0
       ) {
-        return reply.status(200).send({
-          branches: [],
-          premises: [],
-          circles: [],
-        });
+        return reply.status(200).send({ items: [] });
       }
 
-      const filterPredicate = scopes.hasAssociationScope
+      if (
+        query.circleId &&
+        !scopes.hasAssociationScope &&
+        !scopes.circleIds.includes(query.circleId)
+      ) {
+        throw new ForbiddenError(
+          "الحلقة المطلوبة خارج نطاق تكليفك.",
+          "CIRCLE_SCOPE_DENIED",
+        );
+      }
+
+      let filterPredicate = scopes.hasAssociationScope
         ? "TRUE"
         : `(
              qp.branch_id = ANY($2::uuid[])
@@ -154,7 +162,7 @@ const associationsRoutes: FastifyPluginAsync = async (app) => {
              OR c.id = ANY($4::uuid[])
            )`;
 
-      const queryParams = scopes.hasAssociationScope
+      const queryParams: unknown[] = scopes.hasAssociationScope
         ? [associationId]
         : [
             associationId,
@@ -162,6 +170,11 @@ const associationsRoutes: FastifyPluginAsync = async (app) => {
             scopes.premiseIds,
             scopes.circleIds,
           ];
+
+      if (query.circleId) {
+        queryParams.push(query.circleId);
+        filterPredicate = `c.id = ${queryParams.length}::uuid`;
+      }
 
       const rowsRes = await app.db.query(
         `SELECT

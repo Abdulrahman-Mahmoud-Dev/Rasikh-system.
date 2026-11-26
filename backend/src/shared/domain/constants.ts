@@ -60,6 +60,7 @@ export const ROLE_CODES = [
   "supervisor",
   "supervisor_deputy",
   "teacher",
+  "circle_assistant",
   "guardian",
 ] as const;
 export type RoleCode = (typeof ROLE_CODES)[number];
@@ -94,6 +95,10 @@ export const PERMISSIONS = [
   "requests:create",
   "requests:decide",
   "audit:read",
+  "evaluations:manage",
+  "settings:manage",
+  "attendance:update",
+  "recitations:update",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -105,6 +110,7 @@ export const ROLE_HIERARCHY_RANK: Record<RoleCode, number> = {
   supervisor: 30,
   supervisor_deputy: 20,
   teacher: 10,
+  circle_assistant: 8,
   guardian: 5,
 };
 
@@ -116,6 +122,7 @@ export const ROLE_ASSIGNABLE_ROLES: Record<RoleCode, readonly RoleCode[]> = {
     "supervisor",
     "supervisor_deputy",
     "teacher",
+    "circle_assistant",
     "guardian",
   ],
   association_deputy: [
@@ -124,6 +131,7 @@ export const ROLE_ASSIGNABLE_ROLES: Record<RoleCode, readonly RoleCode[]> = {
     "supervisor",
     "supervisor_deputy",
     "teacher",
+    "circle_assistant",
     "guardian",
   ],
   branch_manager: [
@@ -131,12 +139,14 @@ export const ROLE_ASSIGNABLE_ROLES: Record<RoleCode, readonly RoleCode[]> = {
     "supervisor",
     "supervisor_deputy",
     "teacher",
+    "circle_assistant",
     "guardian",
   ],
-  branch_deputy: ["supervisor", "supervisor_deputy", "teacher", "guardian"],
-  supervisor: ["supervisor_deputy", "teacher", "guardian"],
-  supervisor_deputy: ["teacher", "guardian"],
+  branch_deputy: ["supervisor", "supervisor_deputy", "teacher", "circle_assistant", "guardian"],
+  supervisor: ["supervisor_deputy", "teacher", "circle_assistant", "guardian"],
+  supervisor_deputy: ["teacher", "circle_assistant", "guardian"],
   teacher: ["guardian"],
+  circle_assistant: [],
   guardian: [],
 };
 
@@ -160,6 +170,10 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "requests:create",
     "requests:decide",
     "audit:read",
+    "evaluations:manage",
+    "settings:manage",
+    "attendance:update",
+    "recitations:update",
   ],
   branch_manager: [
     "premises:create",
@@ -201,9 +215,16 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "students:read",
     "students:update",
     "students:transfer",
+    "plans:manage",
     "reports:read",
     "requests:create",
     "requests:decide",
+    "evaluations:manage",
+    "settings:manage",
+    "attendance:record",
+    "attendance:update",
+    "recitations:record",
+    "recitations:update",
   ],
   supervisor_deputy: [
     "premises:read",
@@ -213,6 +234,10 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "students:read",
     "reports:read",
     "requests:create",
+    "attendance:record",
+    "attendance:update",
+    "recitations:record",
+    "recitations:update",
   ],
   teacher: [
     "premises:read",
@@ -227,6 +252,17 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleCode, readonly Permission[]> =
     "recitations:record",
     "reports:read",
     "requests:create",
+    "evaluations:manage",
+    "settings:manage",
+    "attendance:update",
+    "recitations:update",
+  ],
+  circle_assistant: [
+    "students:read",
+    "attendance:record",
+    "attendance:update",
+    "recitations:record",
+    "recitations:update",
   ],
   guardian: ["students:read", "reports:read"],
 };

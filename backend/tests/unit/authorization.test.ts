@@ -83,14 +83,16 @@ describe("Server-Side Authorization & Scope Enforcement (Constitution 1.5 Sectio
       },
     ];
 
-    // Supervisor can assign teacher with teacher's allowed permissions
+    // Supervisor can assign a teacher with the teacher's default permissions.
+    // The supervisor role includes the required plan, attendance, and recitation
+    // permissions, but remains unable to assign equal or higher roles.
     expect(
       canAssignRole(
         supervisorAssignments,
         "teacher",
         ROLE_DEFAULT_PERMISSIONS.teacher,
       ),
-    ).toBe(false); // Wait: teacher holds attendance:record and plans:manage which supervisor doesn't have by default!
+    ).toBe(true);
 
     // Supervisor CAN assign teacher with the subset of permissions supervisor holds, or guardian
     expect(

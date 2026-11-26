@@ -17,6 +17,7 @@ import {
   type ScopeType,
 } from "../../shared/domain/constants.js";
 import {
+  AppError,
   BadRequestError,
   ConflictError,
   ForbiddenError,
@@ -30,6 +31,8 @@ import {
   hashSecret,
 } from "../../shared/utilities/crypto.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
+import { sendInvitationEmail } from "../auth/email.service.js";
+import { applyInvitationToPerson } from "./invitations.service.js";
 
 const associationParamsSchema = z.object({
   associationId: z.string().uuid(),
@@ -87,6 +90,7 @@ interface InvitationRow {
   id: string;
   association_id: string;
   invite_type: "staff_role" | "guardian_link";
+  recipient_email: string | null;
   role_code: RoleCode;
   scope_type: ScopeType;
   branch_id: string | null;
@@ -227,12 +231,13 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
       const { associationId } = associationParamsSchema.parse(request.params);
       const body = createInvitationSchema.parse(request.body);
 
-      if (!body.recipientEmail && !body.recipientPhone) {
+      if (!body.recipientEmail) {
         throw new BadRequestError(
-          "يجب تحديد البريد الإلكتروني أو رقم الجوال للمدعو.",
-          "INVITATION_RECIPIENT_REQUIRED",
+          "البريد الإلكتروني للمدعو إلزامي لإرسال الدعوة.",
+          "INVITATION_EMAIL_REQUIRED",
         );
       }
+      const recipientEmail = body.recipientEmail.trim().toLowerCase();
 
       const normalizedPhone = body.recipientPhone
         ? normalizeSaudiPhone(body.recipientPhone)
@@ -241,6 +246,16 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         throw new BadRequestError(
           "صيغة رقم جوال المدعو غير صحيحة (يجب أن يبدأ بـ 05).",
           "INVALID_SAUDI_PHONE",
+        );
+      }
+
+      if (
+        (body.roleCode === "teacher" || body.roleCode === "circle_assistant") &&
+        (body.scopeType !== "circle" || !body.circleId)
+      ) {
+        throw new BadRequestError(
+          "دعوة المعلم أو مساعد الحلقة يجب أن تكون مرتبطة بحلقة محددة.",
+          "CIRCLE_ASSIGNMENT_REQUIRED",
         );
       }
 
@@ -257,21 +272,111 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         }
       }
 
+      // Resolve the real target scope on the server. Never trust a caller to
+      // claim that a circle or student belongs to a branch/premise they manage.
+      let invitationTargetScope: {
+        branchId?: string | null;
+        quranicPremiseId?: string | null;
+        circleId?: string | null;
+        guardianStudentId?: string | null;
+      } = {
+        branchId: body.branchId,
+        quranicPremiseId: body.quranicPremiseId,
+        circleId: body.circleId,
+      };
+
+      if (body.roleCode === "teacher" || body.roleCode === "circle_assistant") {
+        const circleResult = await app.db.query<{
+          circle_id: string;
+          quranic_premise_id: string;
+          branch_id: string;
+          operational_status: string;
+        }>(
+          `SELECT c.id AS circle_id, c.quranic_premise_id,
+                  qp.branch_id, c.operational_status
+           FROM public.circles c
+           INNER JOIN public.quranic_premises qp
+             ON qp.id = c.quranic_premise_id
+            AND qp.association_id = c.association_id
+           WHERE c.id = $1 AND c.association_id = $2
+           LIMIT 1`,
+          [body.circleId, associationId],
+        );
+        const circle = circleResult.rows[0];
+        if (!circle) {
+          throw new NotFoundError(
+            "الحلقة المحددة غير موجودة في هذه الجهة.",
+            "INVITATION_CIRCLE_NOT_FOUND",
+          );
+        }
+        if (circle.operational_status === "closed") {
+          throw new BadRequestError(
+            "لا يمكن إسناد معلم أو مساعد إلى حلقة مغلقة.",
+            "INVITATION_CIRCLE_CLOSED",
+          );
+        }
+        invitationTargetScope = {
+          branchId: circle.branch_id,
+          quranicPremiseId: circle.quranic_premise_id,
+          circleId: circle.circle_id,
+        };
+      }
+
+      if (body.inviteType === "guardian_link" && body.targetStudentId) {
+        const studentScopeResult = await app.db.query<{
+          branch_id: string;
+          quranic_premise_id: string;
+          circle_id: string;
+        }>(
+          `SELECT qp.branch_id, qp.id AS quranic_premise_id, c.id AS circle_id
+           FROM public.students s
+           INNER JOIN public.student_circle_enrollments e
+             ON e.student_id = s.id
+            AND e.association_id = s.association_id
+            AND e.ended_at IS NULL
+           INNER JOIN public.circles c
+             ON c.id = e.circle_id AND c.association_id = s.association_id
+           INNER JOIN public.quranic_premises qp
+             ON qp.id = c.quranic_premise_id
+            AND qp.association_id = s.association_id
+           WHERE s.id = $1 AND s.association_id = $2
+           LIMIT 1`,
+          [body.targetStudentId, associationId],
+        );
+        const studentScope = studentScopeResult.rows[0];
+        if (!studentScope) {
+          throw new NotFoundError(
+            "الطالب المحدد غير موجود أو ليس في حلقة نشطة.",
+            "INVITATION_STUDENT_NOT_FOUND",
+          );
+        }
+        invitationTargetScope = {
+          branchId: studentScope.branch_id,
+          quranicPremiseId: studentScope.quranic_premise_id,
+          circleId: studentScope.circle_id,
+          guardianStudentId: body.targetStudentId,
+        };
+      }
+
       const authz = await authorizeAssociationAction(
         request,
         app.db,
         associationId,
         "invitations:create",
         {
-          targetScope: {
-            branchId: body.branchId,
-            quranicPremiseId: body.quranicPremiseId,
-            circleId: body.circleId,
-            guardianStudentId: body.targetStudentId,
-          },
-          allowScopedListEntry: body.inviteType === "guardian_link",
+          targetScope: invitationTargetScope,
+          allowScopedListEntry: false,
         },
       );
+
+      // Persist only the identifiers permitted by the declared scope shape.
+      // Real parent branch/premise identifiers are used above for authorization,
+      // but circle-scoped invitations must not store wider parent scope fields.
+      const storedScope = {
+        branchId: body.scopeType === "branch" ? body.branchId ?? null : null,
+        quranicPremiseId: body.scopeType === "quranic_premise" ? body.quranicPremiseId ?? null : null,
+        circleId: body.scopeType === "circle" ? body.circleId ?? null : null,
+      };
 
       const permissions =
         body.grantedPermissions ?? [...ROLE_DEFAULT_PERMISSIONS[body.roleCode]];
@@ -315,14 +420,14 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
             invitationId,
             associationId,
             body.inviteType,
-            body.recipientEmail?.trim().toLowerCase() ?? null,
+            recipientEmail,
             normalizedPhone,
             tokenHash,
             body.roleCode,
             body.scopeType,
-            body.branchId ?? null,
-            body.quranicPremiseId ?? null,
-            body.circleId ?? null,
+            storedScope.branchId,
+            storedScope.quranicPremiseId,
+            storedScope.circleId,
             body.targetStudentId ?? null,
             body.relationshipLabel ?? null,
             JSON.stringify(permissions),
@@ -346,12 +451,133 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         });
       });
 
+      const contextResult = await app.db.query<{
+        association_name: string;
+        inviter_name: string;
+        scope_name: string;
+      }>(
+        `SELECT
+           a.name AS association_name,
+           p.full_name AS inviter_name,
+           COALESCE(
+             (SELECT c.name FROM public.circles c
+               WHERE c.id = $2 AND c.association_id = a.id),
+             (SELECT qp.name FROM public.quranic_premises qp
+               WHERE qp.id = $3 AND qp.association_id = a.id),
+             (SELECT b.display_name FROM public.branches b
+               WHERE b.id = $4 AND b.association_id = a.id),
+             a.name
+           ) AS scope_name
+         FROM public.associations a
+         INNER JOIN public.persons p ON p.id = $5
+         WHERE a.id = $1
+         LIMIT 1`,
+        [
+          associationId,
+          body.circleId ?? null,
+          body.quranicPremiseId ?? null,
+          body.branchId ?? null,
+          auth.personId,
+        ],
+      );
+      const context = contextResult.rows[0];
+      if (!context) {
+        await app.db.query(
+          `UPDATE public.invitations SET status = 'revoked' WHERE id = $1`,
+          [invitationId],
+        );
+        throw new AppError(
+          500,
+          "INVITATION_CONTEXT_NOT_FOUND",
+          "تعذر تجهيز تفاصيل رسالة الدعوة.",
+        );
+      }
+
+      try {
+        await sendInvitationEmail({
+          recipientEmail,
+          recipientName: "مرحبًا بك",
+          organizationName: context.association_name,
+          roleName: body.roleCode,
+          scopeName: context.scope_name,
+          expiresAt,
+          inviterName: context.inviter_name,
+        });
+      } catch (error) {
+        await app.db.query(
+          `UPDATE public.invitations SET status = 'revoked' WHERE id = $1 AND status = 'pending'`,
+          [invitationId],
+        );
+        throw error;
+      }
+
+      // If this email already belongs to an active account, attach the role
+      // immediately. Otherwise keep the invitation pending until the owner
+      // registers and confirms this same email address.
+      const existingAccount = await app.db.query<{
+        person_id: string;
+        account_status: string;
+      }>(
+        `SELECT p.id AS person_id, ua.status AS account_status
+         FROM public.persons p
+         INNER JOIN public.user_accounts ua ON ua.person_id = p.id
+         WHERE lower(btrim(p.email)) = $1
+           AND p.lifecycle_status = 'active'
+         LIMIT 1`,
+        [recipientEmail],
+      );
+
+      let membershipAssigned = false;
+      const existing = existingAccount.rows[0];
+      if (existing?.account_status === "active") {
+        membershipAssigned = await withTransaction(app.db, async (client) => {
+          const invitationResult = await client.query<{
+            id: string;
+            association_id: string;
+            invite_type: "staff_role" | "guardian_link";
+            recipient_email: string | null;
+            role_code: RoleCode;
+            scope_type: ScopeType;
+            branch_id: string | null;
+            quranic_premise_id: string | null;
+            circle_id: string | null;
+            target_student_id: string | null;
+            relationship_label: string | null;
+            granted_permissions: string[];
+            invited_by_person_id: string;
+            status: string;
+            expires_at: Date | string;
+          }>(
+            `SELECT id, association_id, invite_type, recipient_email, role_code,
+                    scope_type, branch_id, quranic_premise_id, circle_id,
+                    target_student_id, relationship_label, granted_permissions,
+                    invited_by_person_id, status, expires_at
+             FROM public.invitations
+             WHERE id = $1
+             FOR UPDATE`,
+            [invitationId],
+          );
+          const invitation = invitationResult.rows[0];
+          if (!invitation) return false;
+          const result = await applyInvitationToPerson(
+            client,
+            invitation,
+            existing.person_id,
+            recipientEmail,
+          );
+          return Boolean(result);
+        });
+      }
+
       return reply.status(201).send({
         invitation: {
           id: invitationId,
           inviteType: body.inviteType,
+          recipientEmail,
           roleCode: body.roleCode,
           expiresAt: expiresAt.toISOString(),
+          delivery: "accepted_by_email_provider",
+          membershipAssigned,
         },
       });
     },
@@ -371,6 +597,7 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
              id,
              association_id,
              invite_type,
+             recipient_email,
              role_code,
              scope_type,
              branch_id,
@@ -404,6 +631,21 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
           throw new BadRequestError(
             "انتهت صلاحية هذه الدعوة.",
             "INVITATION_EXPIRED",
+          );
+        }
+
+        const accountEmailRes = await client.query<{ email: string }>(
+          `SELECT lower(btrim(email)) AS email
+           FROM public.persons
+           WHERE id = $1
+           LIMIT 1`,
+          [auth.personId],
+        );
+        const accountEmail = accountEmailRes.rows[0]?.email;
+        if (!inv.recipient_email || accountEmail !== inv.recipient_email.toLowerCase()) {
+          throw new ForbiddenError(
+            "يجب قبول الدعوة باستخدام الحساب المرتبط بالبريد الذي أُرسلت إليه.",
+            "INVITATION_EMAIL_MISMATCH",
           );
         }
 

@@ -55,6 +55,8 @@ describe("SQL Migrations Structure & Constitution Compliance", () => {
       "0002_auth_memberships_and_authorization.sql",
       "0003_students_transfers_requests_and_audit.sql",
       "0004_education_plans_recitation_attendance_and_sync.sql",
+      "0005_auth_google_password_and_workspaces.sql",
+      "0006_circle_assistant_permissions.sql",
     ]);
 
     for (const migration of migrations) {
