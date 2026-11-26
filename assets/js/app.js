@@ -437,7 +437,7 @@ $("#closeModal").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="mo
 $("#attendanceDate").value=new Date().toISOString().slice(0,10);
 
 function initializePasswordVisibility(){
- $(".password-toggle[data-toggle-password]").forEach(button=>{
+ document.querySelectorAll(".password-toggle[data-toggle-password]").forEach(button=>{
   button.addEventListener("click",()=>{
    const input=$("#"+button.dataset.togglePassword);
    if(!input)return;
