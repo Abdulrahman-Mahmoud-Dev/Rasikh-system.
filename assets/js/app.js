@@ -2,13 +2,13 @@
 "use strict";
 const API=(window.RASIKH_CONFIG&&window.RASIKH_CONFIG.API_BASE_URL||"").replace(/\/$/,"");
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const state={user:null,assignments:[],permissions:[],roles:[],associationId:"",hierarchy:[],students:[],attendance:{},report:null,invitationToken:null,invitationInfo:null,resetToken:null,authMode:"login"};
+const state={user:null,assignments:[],permissions:[],roles:[],associationId:"",hierarchy:[],students:[],attendance:{},report:null,invitationToken:null,invitationInfo:null,resetToken:null,authMode:"login",circleOnlyMode:false,activeCircleId:null,activeAssignedWorkspace:null};
 const labels={after_fajr:"بعد الفجر",after_dhuhr:"بعد الظهر",after_asr:"بعد العصر",after_maghrib:"بعد المغرب",after_isha:"بعد العشاء",active:"نشط",temporarily_suspended:"موقوف مؤقتًا",expelled:"مستبعد",mosque:"مسجد",quranic_center:"مقر قرآني"};
 function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),3200)}
 function msg(el,text,isError=true){el.textContent=text;el.style.color=isError?"#b4232e":"#176b54"}
 async function api(path,opts={}){if(!API)throw Error("لم يتم ضبط عنوان API في assets/js/rasikh-config.js.");const res=await fetch(API+"/api/v1"+path,{...opts,credentials:"include",headers:{"Content-Type":"application/json",...(opts.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw Error(data?.error?.message||"تعذر تنفيذ الطلب ("+res.status+")");return data}
 function showApp(){
- $("#loginView").classList.add("hidden");$("#onboardingView").classList.add("hidden");$("#appView").classList.remove("hidden");
+ $("#loginView").classList.add("hidden");$("#onboardingView").classList.add("hidden");$("#assignmentSelectView").classList.add("hidden");$("#appView").classList.remove("hidden");
  $("#sideUserName").textContent=state.user.fullName;$("#userInitial").textContent=(state.user.fullName||"ر").trim()[0];
  $("#accountDetails").textContent=state.user.fullName+" · "+(state.user.fileNumber||"");
  $("#welcomeTitle").textContent="مرحبًا بك، "+state.user.fullName;
@@ -39,7 +39,7 @@ function renderNavigation(){
  if(sideStructure)sideStructure.lastChild.textContent=teaching?"حلقاتي":supervisory?"المساجد والمقرات":"الهيكل التنظيمي";
  const sideStudents=$("#sideNav [data-view=students]");
  if(sideStudents)sideStudents.lastChild.textContent=guardian?"أبنائي":"الطلاب";
- const mobileAllowed={home:!guardian,structure:canStructure,students:canStudents,attendance:canAttendance};
+ const mobileAllowed={home:!guardian&&!state.circleOnlyMode,structure:canStructure,students:canStudents,attendance:canAttendance};
  $$(".mobile-bottom-nav [data-view]").forEach(b=>{
   const v=b.dataset.view;b.classList.toggle("hidden",!mobileAllowed[v]);
   if(v==="home")b.lastChild.textContent=teaching?"اليوم":"الرئيسية";
@@ -73,28 +73,111 @@ async function loadMe(){
  $("#associationSelect").innerHTML=opts.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join("")||'<option value="">لا توجد جهة مرتبطة</option>';
  state.associationId=opts[0]?.id||"";refreshPermissions();
 }
-async function afterAuthenticated(){
+function getAssignedCircleChoices(){
+ const map=new Map();
+ for(const item of state.assignments){
+  if(!["teacher","circle_assistant"].includes(item.role_code)||item.scope_type!=="circle")continue;
+  const circleId=item.assigned_circle_id||item.circle_id;
+  if(!circleId)continue;
+  const key=item.association_id+"|"+circleId;
+  const old=map.get(key)||{
+   association_id:item.association_id,
+   association_name:item.association_name||"جهة مستقلة",
+   workspace_kind:item.workspace_kind||"",
+   branch_name:item.assigned_branch_name||"",
+   premise_id:item.assigned_premise_id||item.quranic_premise_id||"",
+   premise_name:item.assigned_premise_name||"المسجد أو المقر",
+   circle_id:circleId,
+   circle_name:item.assigned_circle_name||"الحلقة",
+   study_period:item.assigned_circle_period||"",
+   roles:[]
+  };
+  if(!old.roles.includes(item.role_code))old.roles.push(item.role_code);
+  map.set(key,old);
+ }
+ return [...map.values()].sort((a,b)=>
+  a.association_name.localeCompare(b.association_name,"ar")||
+  a.branch_name.localeCompare(b.branch_name,"ar")||
+  a.premise_name.localeCompare(b.premise_name,"ar")||
+  a.circle_name.localeCompare(b.circle_name,"ar")
+ );
+}
+function isCircleStaffOnly(){
+ const roles=state.assignments.map(a=>a.role_code).filter(Boolean);
+ return roles.length>0&&roles.every(role=>role==="teacher"||role==="circle_assistant");
+}
+function showAssignedCircleChooser(choices){
+ $("#loginView").classList.add("hidden");$("#onboardingView").classList.add("hidden");$("#appView").classList.add("hidden");
+ $("#assignmentSelectView").classList.remove("hidden");
+ $("#assignmentSelectMessage").textContent=choices.length?"اختر الحلقة التي تريد العمل عليها.":"لم يتم إسناد حلقة إلى حسابك حتى الآن. تواصل مع المشرف المسؤول.";
+ $("#assignedCircleOptions").innerHTML=choices.map((item,index)=>
+  '<button type="button" class="assignment-option" data-assigned-index="'+index+'">'+
+   '<span class="assignment-number">'+(index+1).toLocaleString("ar-SA")+'</span>'+
+   '<strong>'+esc(item.circle_name)+'</strong>'+
+   '<span>'+esc(item.association_name)+'</span>'+
+   '<small>'+esc(item.premise_name)+(item.branch_name?" · "+esc(item.branch_name):"")+'</small>'+
+   '<small>'+(item.roles.map(x=>x==="teacher"?"معلم":"مساعد حلقة").join("، "))+'</small>'+
+  '</button>'
+ ).join("");
+ state.availableAssignedChoices=choices;
+}
+async function enterAssignedCircle(choice){
+ state.circleOnlyMode=true;
+ state.activeCircleId=choice.circle_id;
+ state.activeAssignedWorkspace=choice;
+ state.associationId=choice.association_id;
+ showApp();
+ $("#associationSelect").classList.add("hidden");
+ $("#assignedContext").textContent=choice.premise_name+" · "+choice.circle_name;
+ $("#assignedContext").classList.remove("hidden");
+ $("#changeAssignedCircle").classList.remove("hidden");
+ await loadCurrentAssociation();
+ $("#attendanceCircle").value=choice.circle_id;
+ $("#studentCircleFilter").value=choice.circle_id;
+ $("#reportCircle").value=choice.circle_id;
+ $("#attendanceCircle").disabled=true;
+ $("#studentCircleFilter").disabled=true;
+ $("#reportCircle").disabled=true;
+ nav("attendance");
+}
+async function routeAuthenticatedUser(){
  await loadMe();
+ if(isCircleStaffOnly()){
+  const choices=getAssignedCircleChoices();
+  if(choices.length===1){await enterAssignedCircle(choices[0]);return;}
+  showAssignedCircleChooser(choices);return;
+ }
+ state.circleOnlyMode=false;state.activeCircleId=null;state.activeAssignedWorkspace=null;
  if(!state.assignments.length){await showOnboarding();return;}
  showApp();
- const landing=state.roles.every(r=>r==="guardian")?"students":
-  (state.roles.includes("teacher")||state.roles.includes("circle_assistant")?"attendance":"home");
+ const landing=state.roles.every(r=>r==="guardian")?"students":"home";
  nav(landing);await loadCurrentAssociation();
 }
+async function afterAuthenticated(){await routeAuthenticatedUser();}
 async function acceptPendingInvitation(){
  if(!state.invitationToken)return;
  await api("/invitations/accept",{method:"POST",body:JSON.stringify({token:state.invitationToken})});
  state.invitationToken=null;const url=new URL(location.href);url.searchParams.delete("invitation");history.replaceState({}, "",url.toString());
 }
 async function loadCurrentAssociation(){refreshPermissions();renderNavigation();if(!state.associationId){renderHome();return}$("#associationSelect").value=state.associationId;await Promise.all([loadHierarchy(),loadStudents()]);renderHome()}
-async function loadHierarchy(){const data=await api("/associations/"+state.associationId+"/hierarchy");state.hierarchy=data.items||[];renderStructure();populateCircleSelects()}
-async function loadStudents(){const data=await api("/associations/"+state.associationId+"/students");state.students=data.students||[];renderStudents();renderAttendanceRows()}
+async function loadHierarchy(){
+ const data=await api("/associations/"+state.associationId+"/hierarchy");
+ const items=data.items||[];
+ state.hierarchy=state.circleOnlyMode&&state.activeCircleId?items.filter(x=>x.circle_id===state.activeCircleId):items;
+ renderStructure();populateCircleSelects();
+}
+async function loadStudents(){
+ const data=await api("/associations/"+state.associationId+"/students");
+ const students=data.students||[];
+ state.students=state.circleOnlyMode&&state.activeCircleId?students.filter(s=>s.circleId===state.activeCircleId):students;
+ renderStudents();renderAttendanceRows();
+}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function nav(view){
- const allowed={home:true,structure:hasAnyPermission(["premises:read","premises:create","circles:read","circles:create"]),
+ const allowed={home:!state.circleOnlyMode,structure:!state.circleOnlyMode&&hasAnyPermission(["premises:read","premises:create","circles:read","circles:create"]),
   students:hasPermission("students:read"),
   attendance:hasAnyPermission(["attendance:record","attendance:update","recitations:record","recitations:update"]),
-  reports:hasPermission("reports:read"),settings:hasAnyPermission(["settings:manage","evaluations:manage"])};
+  reports:hasPermission("reports:read"),settings:hasPermission("settings:manage")||hasPermission("evaluations:manage")};
  if(!allowed[view]){toast("ليس لديك صلاحية لفتح هذا القسم.");return;}
  $$(".nav-item,.mobile-bottom-nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
  $$(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+view));
@@ -103,7 +186,17 @@ function nav(view){
 }
 function renderHome(){const branches=new Set(state.hierarchy.map(x=>x.branch_id));const premises=new Map(state.hierarchy.filter(x=>x.premise_id).map(x=>[x.premise_id,x]));const circles=new Set(state.hierarchy.filter(x=>x.circle_id).map(x=>x.circle_id));$("#homeStats").innerHTML=[["الفروع",branches.size],["المساجد والمقرات",premises.size],["الحلقات",circles.size],["الطلاب",state.students.length]].map(([n,v])=>'<article class="stat-card"><span>'+n+'</span><strong>'+v.toLocaleString("ar-SA")+'</strong></article>').join("");$("#homeStructure").innerHTML=state.hierarchy.length?state.hierarchy.slice(0,8).map(x=>'<div class="premise-card"><strong>'+esc(x.premise_name||x.branch_display_name||"فرع")+'</strong><div class="muted">'+esc(x.city||"")+' · '+esc(x.district||"")+'</div>'+(x.circle_name?'<span class="circle-chip">'+esc(x.circle_name)+'</span>':"")+'</div>').join(""):'<div class="empty-state">لا توجد عناصر في الهيكل التنظيمي بعد.</div>'}
 function renderStructure(){const groups=new Map();state.hierarchy.forEach(x=>{if(!groups.has(x.branch_id))groups.set(x.branch_id,{name:x.branch_display_name||x.city||"فرع",city:x.city,district:x.district,premises:new Map()});if(x.premise_id){const g=groups.get(x.branch_id);if(!g.premises.has(x.premise_id))g.premises.set(x.premise_id,{name:x.premise_name,type:x.premise_type,circles:[]});if(x.circle_id)g.premises.get(x.premise_id).circles.push(x.circle_name)}});$("#structureList").innerHTML=groups.size?[...groups.values()].map(g=>'<article class="branch-card"><h3>'+esc(g.name)+'</h3><small class="muted">'+esc(g.city||"")+' · '+esc(g.district||"")+'</small>'+[...g.premises.values()].map(p=>'<div class="premise-card"><div class="premise-head"><strong>'+esc(p.name)+'</strong><span class="status-pill">'+(labels[p.type]||"")+'</span></div>'+p.circles.map(c=>'<span class="circle-chip">'+esc(c)+'</span>').join("")+'</div>').join("")+'</article>').join(""):'<div class="panel empty-state">لا توجد فروع أو مساجد مسجلة.</div>';const premises=[...new Map(state.hierarchy.filter(x=>x.premise_id).map(x=>[x.premise_id,{id:x.premise_id,name:x.premise_name}])).values()];$("#circlePremise").innerHTML=premises.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")||'<option value="">أضف مسجدًا أو مقرًا أولًا</option>'}
-function populateCircleSelects(){const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{id:x.circle_id,name:x.circle_name}])).values()];["studentCircleFilter","attendanceCircle","reportCircle"].forEach(id=>{const el=$("#"+id),prev=el.value;el.innerHTML=(id==="studentCircleFilter"||id==="reportCircle"?'<option value="">جميع الحلقات</option>':"")+circles.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("");if([...el.options].some(o=>o.value===prev))el.value=prev});}
+function populateCircleSelects(){
+ const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{id:x.circle_id,name:x.circle_name}])).values()];
+ ["studentCircleFilter","attendanceCircle","reportCircle"].forEach(id=>{
+  const el=$("#"+id),prev=el.value;
+  el.innerHTML=(state.circleOnlyMode?"":(id==="studentCircleFilter"||id==="reportCircle"?'<option value="">جميع الحلقات</option>':""))+circles.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");
+  if(state.activeCircleId&&[...el.options].some(o=>o.value===state.activeCircleId))el.value=state.activeCircleId;
+  else if([...el.options].some(o=>o.value===prev))el.value=prev;
+  if(state.circleOnlyMode)el.disabled=true;
+  else el.disabled=false;
+ });
+}
 function renderStudents(){const q=$("#studentSearch").value.trim().toLocaleLowerCase();const circle=$("#studentCircleFilter").value,status=$("#studentStatusFilter").value;const rows=state.students.filter(s=>(!q||(s.fullName+" "+s.fileNumber).toLocaleLowerCase().includes(q))&&(!circle||s.circleId===circle)&&(!status||s.educationalStatus===status));$("#studentsRows").innerHTML=rows.length?rows.map(s=>'<tr><td><strong>'+esc(s.fullName)+'</strong></td><td>'+esc(s.fileNumber)+'</td><td>'+esc(s.circleName||"—")+'</td><td><span class="status-pill '+(s.educationalStatus==="expelled"?"expelled":s.educationalStatus==="temporarily_suspended"?"suspended":"")+'">'+(labels[s.educationalStatus]||s.educationalStatus)+'</span></td><td>'+Number(s.previousMemorizedJuz||0).toLocaleString("ar-SA")+' جزء</td></tr>').join(""):'<tr><td colspan="5" class="empty-state">لا توجد نتائج مطابقة.</td></tr>'}
 function renderAttendanceRows(){const circle=$("#attendanceCircle").value;const rows=state.students.filter(s=>s.circleId===circle&&s.educationalStatus==="active");$("#attendanceCount").textContent=rows.length+" طالب";$("#attendanceRows").innerHTML=rows.map(s=>{const status=state.attendance[s.id]||"unrecorded";return '<div class="attendance-row"><div><strong>'+esc(s.fullName)+'</strong><small>'+esc(s.fileNumber)+' · '+(status==="unrecorded"?"لم يُسجّل": "تم تحديد الحالة")+'</small></div><div class="attendance-actions"><div class="attendance-options">'+[["present","حاضر"],["absent","غائب"],["excused_absence","بعذر"],["late","متأخر"],["leave","إجازة"]].map(([v,l])=>'<button data-student="'+s.id+'" data-status="'+v+'" class="'+(status===v?"selected":"")+'">'+l+'</button>').join("")+'</div><button class="text-btn" data-recitation="'+s.id+'">＋ تسجيل التسميع</button></div></div>'}).join("")||'<div class="empty-state">لا يوجد طلاب نشطون في الحلقة المحددة.</div>'}
 
@@ -121,7 +214,7 @@ async function addStudent(){const circles=[...new Map(state.hierarchy.filter(x=>
 async function createCircle(e){e.preventDefault();const b={quranicPremiseId:$("#circlePremise").value,name:$("#circleName").value.trim(),studyPeriod:$("#circlePeriod").value,targetStage:$("#circleStage").value.trim()||undefined};await api("/associations/"+state.associationId+"/circles",{method:"POST",body:JSON.stringify(b)});e.target.reset();await loadHierarchy();toast("تم إنشاء الحلقة.")}
 async function checkApi(){const r=await fetch(API+"/health/ready",{credentials:"include"});const d=await r.json();$("#apiStatus").textContent=r.ok?"الخادم وقاعدة البيانات متصلان.":"الخادم غير جاهز: "+(d.database||r.status)}
 async function showOnboarding(){
- $("#loginView").classList.add("hidden");$("#appView").classList.add("hidden");$("#onboardingView").classList.remove("hidden");
+ $("#loginView").classList.add("hidden");$("#assignmentSelectView").classList.add("hidden");$("#appView").classList.add("hidden");$("#onboardingView").classList.remove("hidden");
  try{
   const status=await api("/onboarding/status"),pending=status.pendingRegistrations||[],box=$("#pendingRegistration");
   if(pending.length){box.classList.remove("hidden");box.innerHTML="<strong>طلب جمعية قيد التحقق</strong><div>"+pending.map(x=>esc(x.association_name)+" — "+esc(x.license_number)+" — "+esc(x.licensing_authority)).join("<br>")+"</div><p>لن تُفعّل صلاحيات إدارة الجمعية حتى اعتماد بيانات الترخيص.</p>";$("#workspaceOptions").classList.add("hidden");}
@@ -182,16 +275,18 @@ async function submitAssociationSetup(e){e.preventDefault();try{const data=await
 async function submitIndependentSetup(e){e.preventDefault();try{await api("/onboarding/independent",{method:"POST",body:JSON.stringify({workspaceKind:$("#independentKind").value,name:$("#independentName").value.trim(),city:$("#independentCity").value.trim(),district:$("#independentDistrict").value.trim(),administrativeRegion:$("#independentRegion").value.trim()||undefined,circleName:$("#independentCircleName").value.trim(),studyPeriod:$("#independentStudyPeriod").value})});await afterAuthenticated();}catch(err){$("#onboardingMessage").textContent=err.message;}}
 async function boot(){
  if(await beginAuthFromUrl())return;
- try{await loadMe();if(!state.assignments.length){await showOnboarding();return;}showApp();const landing=state.roles.every(r=>r==="guardian")?"students":(state.roles.includes("teacher")||state.roles.includes("circle_assistant")?"attendance":"home");nav(landing);await loadCurrentAssociation();}
+ try{await routeAuthenticatedUser();}
  catch(e){if(!API){msg($("#authMessage"),"عنوان الخادم غير مضبوط في assets/js/rasikh-config.js. إعداد API_BASE_URL مطلوب لتشغيل الدخول.");}else{msg($("#authMessage"),"سجّل الدخول للمتابعة.");}}
 }
+$("#assignmentLogout").onclick=$("#changeAssignedCircle").onclick=async()=>{if($("#changeAssignedCircle").classList.contains("hidden")){try{await api("/auth/logout",{method:"POST",body:"{}"});}catch{}location.reload();return;}showAssignedCircleChooser(getAssignedCircleChoices());};
+$("#assignedCircleOptions").onclick=async e=>{const button=e.target.closest("[data-assigned-index]");if(!button)return;const choice=state.availableAssignedChoices[Number(button.dataset.assignedIndex)];if(!choice)return;try{await enterAssignedCircle(choice);}catch(err){msg($("#assignmentSelectMessage"),err.message);}};
 $("#passwordLoginForm").onsubmit=submitPasswordLogin;$("#registerForm").onsubmit=submitRegistration;$("#invitationRegisterForm").onsubmit=submitInvitationRegistration;$("#resetRequestForm").onsubmit=submitResetRequest;$("#resetConfirmForm").onsubmit=submitResetConfirm;
 $("#tabLogin").onclick=()=>setAuthMode("login");$("#tabRegister").onclick=()=>setAuthMode("register");$("#forgotPasswordBtn").onclick=showForgotPassword;$("#existingInviteAccount").onclick=()=>{setAuthMode("login");$("#loginEmail").value=state.invitationInfo?.email||"";};
 $$("[data-return-login]").forEach(b=>b.onclick=()=>setAuthMode("login"));
 $$("[data-workspace]").forEach(b=>b.onclick=()=>createWorkspace(b.dataset.workspace));
 $$("[data-back-workspaces]").forEach(b=>b.onclick=()=>{$("#associationSetup").classList.add("hidden");$("#independentSetup").classList.add("hidden");$("#workspaceOptions").classList.remove("hidden");});
 $("#associationSetupForm").onsubmit=submitAssociationSetup;$("#independentSetupForm").onsubmit=submitIndependentSetup;
-$("#associationSelect").onchange=async e=>{state.associationId=e.target.value;refreshPermissions();renderNavigation();try{await loadCurrentAssociation();}catch(err){toast(err.message);}};
+$("#associationSelect").onchange=async e=>{state.associationId=e.target.value;state.circleOnlyMode=false;state.activeCircleId=null;refreshPermissions();renderNavigation();try{await loadCurrentAssociation();}catch(err){toast(err.message);}};
 $("#sideNav").onclick=e=>{const b=e.target.closest("[data-view]");if(b&&!b.classList.contains("hidden"))nav(b.dataset.view);};
 $(".mobile-bottom-nav").onclick=e=>{const b=e.target.closest("[data-view]");if(b&&!b.classList.contains("hidden"))nav(b.dataset.view);};
 $("#content").onclick=e=>{const b=e.target.closest("[data-go]");if(b)nav(b.dataset.go);};
