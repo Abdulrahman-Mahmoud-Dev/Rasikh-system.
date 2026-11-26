@@ -303,26 +303,56 @@ const authAccountsRoutes: FastifyPluginAsync = async (app) => {
       const passwordHash = await hashPassword(body.password);
 
       const created = await withTransaction(app.db, async (client) => {
-        const existing = await client.query<{ id: string }>(
-          `SELECT p.id
+        const existingPersonResult = await client.query<{
+          id: string;
+          file_number: string;
+          full_name: string;
+          account_id: string | null;
+        }>(
+          `SELECT p.id, p.file_number, p.full_name, ua.id AS account_id
            FROM public.persons p
+           LEFT JOIN public.user_accounts ua ON ua.person_id = p.id
            WHERE lower(btrim(p.email)) = $1
-           LIMIT 1`,
+             AND p.lifecycle_status = 'active'
+           LIMIT 1
+           FOR UPDATE OF p`,
           [body.email],
         );
-        if (existing.rows[0]) {
+
+        const existingPerson = existingPersonResult.rows[0];
+        if (existingPerson?.account_id) {
           throw new ConflictError(
-            "هذا البريد مرتبط بملف سابق. سجّل الدخول أو افتح الدعوة المرسلة إليه.",
+            "هذا البريد لديه حساب بالفعل. استخدم تسجيل الدخول أو استعادة كلمة المرور.",
             "EMAIL_ALREADY_REGISTERED",
           );
         }
 
-        const account = await createAccountForNewPerson(client, {
-          fullName: body.fullName,
-          email: body.email,
-          passwordHash,
-          emailVerified: false,
-        });
+        let account: SessionResult["account"];
+        if (existingPerson) {
+          // A person profile may have been created by the association before
+          // the person creates login credentials. Reuse that identity.
+          const accountId = generateUuid();
+          await client.query(
+            `INSERT INTO public.user_accounts (id, person_id, status, password_hash)
+             VALUES ($1, $2, 'pending', $3)`,
+            [accountId, existingPerson.id, passwordHash],
+          );
+          account = {
+            account_id: accountId,
+            person_id: existingPerson.id,
+            full_name: existingPerson.full_name,
+            file_number: existingPerson.file_number,
+            platform_role: null,
+          };
+        } else {
+          account = await createAccountForNewPerson(client, {
+            fullName: body.fullName,
+            email: body.email,
+            passwordHash,
+            emailVerified: false,
+          });
+        }
+
         const emailToken = await createEmailToken(
           client,
           account.account_id,
