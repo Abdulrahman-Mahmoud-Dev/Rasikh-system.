@@ -114,12 +114,12 @@
 2. أكمل إعداد OAuth consent screen وبيانات التطبيق المطلوبة.
 3. أنشئ OAuth Client ID من نوع Web application.
 4. في Authorized JavaScript origins أضف أصل موقع الواجهة فقط، مثل:
-   `https://YOUR-ACCOUNT.github.io`
-   استخدم قيمة `location.origin` الفعلية من صفحة راسخ، ولا تضف مسار المستودع إلى خانة Origin.
+   `https://abdulrahman-mahmoud-dev.github.io`
+   استخدم هذا الأصل الفعلي لراسخ، ولا تضف مسار المستودع إلى خانة Origin: `https://abdulrahman-mahmoud-dev.github.io`.
 5. انسخ Web Client ID (ينتهي غالبًا بـ `.apps.googleusercontent.com`).
-6. ضع القيمة نفسها في:
-   - `GOOGLE_CLIENT_ID` داخل أسرار Backend.
-   - `GOOGLE_CLIENT_ID` في `assets/js/rasikh-config.js`.
+6. معرّف Web Client الذي أنشأته لراسخ هو:
+   `1062009093851-uqvt6iqc72ak0oq2trr6ij99rs28pngt.apps.googleusercontent.com`
+7. هذه القيمة نفسها موضوعة الآن في `assets/js/rasikh-config.js`، ويجب إدخالها في متغير `GOOGLE_CLIENT_ID` داخل إعدادات Backend عند نشر الخادم.
 
 لا تضع Google Client Secret في الواجهة. الكود يستخدم Google Identity Services ليعرض زر Google الرسمي؛ ثم يرسل ID token إلى Backend ليُتحقق من توقيعه و`aud` و`iss` و`exp` و`nonce`. ويُستخدم `sub` كمعرّف Google الثابت، وليس البريد وحده.
 
