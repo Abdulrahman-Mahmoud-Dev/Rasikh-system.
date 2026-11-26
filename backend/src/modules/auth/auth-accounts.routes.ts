@@ -32,12 +32,12 @@ const emailSchema = z.string().trim().email().max(255).transform((value) => valu
 const registerSchema = z.object({
   fullName: z.string().trim().min(3).max(200),
   email: emailSchema,
-  password: z.string().min(12).max(128),
+  password: z.string().min(6).max(128),
 });
 
 const passwordLoginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1).max(128),
+  password: z.string().min(6).max(128),
 });
 
 const tokenSchema = z.object({
@@ -46,7 +46,7 @@ const tokenSchema = z.object({
 
 const passwordResetSchema = z.object({
   token: z.string().min(24).max(512),
-  password: z.string().min(12).max(128),
+  password: z.string().min(6).max(128),
 });
 
 const googleLoginSchema = z.object({
@@ -63,7 +63,7 @@ const invitationPreviewParams = z.object({
 const invitationRegistrationSchema = z.object({
   token: z.string().min(24).max(512),
   fullName: z.string().trim().min(3).max(200),
-  password: z.string().min(12).max(128),
+  password: z.string().min(6).max(128),
 });
 
 interface AccountRow {
