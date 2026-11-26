@@ -20,7 +20,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-rasikh_app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - rasikh-postgres-data:/var/lib/postgresql/data
+      - rasikh-postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rasikh_app} -d ${POSTGRES_DB:-rasikh_dev}"]
       interval: 5s
