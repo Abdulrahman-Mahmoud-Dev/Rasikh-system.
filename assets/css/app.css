@@ -57,3 +57,17 @@
  .icon-button{display:none}
  .sidebar.open{transform:none}
 }
+
+/* شاشة الدخول وأيقونات التنقل وفق مرجع الهوية */
+.login-view{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px;background:var(--r-bg)}
+.login-art{display:none}
+.login-card{align-self:center;justify-self:center;width:min(440px,100%);margin:0;padding:34px;border-color:var(--r-border);box-shadow:0 8px 28px #0B1F3F0A}
+.login-card:before{content:"راسخ";display:block;text-align:center;color:var(--r-navy);font-size:30px;font-weight:700;margin:0 0 16px}
+.login-card h2{color:var(--r-navy)}
+.login-card .btn.primary{background:var(--r-green)}
+.nav-item span svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:720px){
+ .login-view{padding:18px}
+ .login-card{width:100%;padding:26px 22px}
+ .nav-item span svg{width:21px;height:21px}
+}
