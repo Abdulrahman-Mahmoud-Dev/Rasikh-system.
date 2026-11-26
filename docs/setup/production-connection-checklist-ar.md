@@ -64,6 +64,7 @@
 | `CORS_ORIGIN` | `https://abdulrahman-mahmoud-dev.github.io` |
 | `PUBLIC_APP_URL` | `https://abdulrahman-mahmoud-dev.github.io/Rasikh-system.` |
 | `LOG_LEVEL` | `info` |
+| `GOOGLE_CLIENT_ID` | `1062009093851-uqvt6iqc72ak0oq2trr6ij99rs28pngt.apps.googleusercontent.com` (معرّف عام، وليس سرًا) |
 
 لا تستخدم عنوان GitHub Pages مكان `DATABASE_URL` أو `API_BASE_URL`. الأول رابط قاعدة البيانات، والثاني رابط الـBackend المنشور.
 
@@ -86,7 +87,8 @@ npm run db:migrate:built
 وضع:
 
 - `API_BASE_URL`: أصل عنوان Backend فقط، مثال شكلي: `https://api.example.com`، بلا `/api/v1` في النهاية.
-- `GOOGLE_CLIENT_ID`: معرّف Web Client الذي ستنشئه في Google Cloud.
+- `GOOGLE_CLIENT_ID`: استخدم معرّف Web Client الذي أنشأته في Google Cloud:
+  `1062009093851-uqvt6iqc72ak0oq2trr6ij99rs28pngt.apps.googleusercontent.com`
 
 لا تضع في هذا الملف كلمة مرور، أو `DATABASE_URL`، أو `COOKIE_SECRET`، أو `EMAILJS_PRIVATE_KEY`، أو Google Client Secret.
 
@@ -108,9 +110,13 @@ npm run db:migrate:built
 4. في **Authorized JavaScript origins** أضف هذا الأصل حرفيًا:
    `https://abdulrahman-mahmoud-dev.github.io`
 5. لا تضف مسار `/Rasikh-system./` إلى خانة Origin.
-6. انسخ **Web Client ID** وضع القيمة نفسها في الواجهة والـBackend.
+6. معرّف Web Client الذي أنشأته لراسخ هو:
+   `1062009093851-uqvt6iqc72ak0oq2trr6ij99rs28pngt.apps.googleusercontent.com`
+7. القيمة نفسها موجودة الآن في إعداد الواجهة، ويجب وضعها في متغير الخادم `GOOGLE_CLIENT_ID` عند نشر Backend.
 
-لا تنشئ أو تضع Client Secret في الواجهة. لا يوجد في المستودع Client ID حقيقي حتى الآن، ولا يمكن توليده من GitHub.
+لا تضع Google Client Secret في الواجهة أو في GitHub. تدفق تسجيل الدخول الحالي يستخدم Google Identity Services للتحقق من هوية المستخدم ولا يحتاج Client Secret ضمن هذا التكامل.
+
+**حول Test users (مستخدمو الاختبار):** تطبيق External في وضع Testing يقيّد الوصول عادةً بالمستخدمين المضافين إلى القائمة. لكن توثيق Google يستثني التطبيقات التي تطلب فقط نطاقات الهوية الأساسية `openid` و`email` و`profile`. تكامل راسخ الحالي يستخدم تسجيل الهوية فقط ولا يطلب صلاحيات Drive أو Gmail؛ لذلك لا يلزم تعطيل تقدمنا بسبب تعذر إضافة البريدين إلى قائمة الاختبار. إذا أضفنا لاحقًا صلاحيات Google إضافية، نعيد مراجعة متطلبات الاختبار والتحقق.
 
 **لماذا لا يظهر الزر الآن؟** لأن الإعدادين فارغان، والواجهة تحتاج أيضًا الحصول على Nonce من الـBackend قبل رسم زر Google؛ وهذا مقصود لحماية تدفق تسجيل الدخول، وليس خللًا في تصميم الصفحة.
 
