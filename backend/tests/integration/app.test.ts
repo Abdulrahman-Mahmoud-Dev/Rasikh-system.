@@ -392,4 +392,42 @@ describe("Fastify Backend HTTP Integration", () => {
       monthlyBadge: "ideal_student",
     });
   });
+
+  it("registers password, Google, onboarding, and invitation API routes", async () => {
+    const passwordLoginRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/login",
+      payload: { email: "not-an-email", password: "short" },
+    });
+    expect(passwordLoginRes.statusCode).toBe(400);
+
+    const registrationRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/register",
+      payload: { email: "not-an-email" },
+    });
+    expect(registrationRes.statusCode).toBe(400);
+
+    const googleNonceRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/google/nonce",
+      payload: {},
+    });
+    expect(googleNonceRes.statusCode).toBe(200);
+    expect(googleNonceRes.json().nonce).toBeTypeOf("string");
+
+    const onboardingRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/onboarding/status",
+    });
+    expect(onboardingRes.statusCode).toBe(401);
+
+    const invitationRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/associations/${ASSOC_A}/invitations`,
+      payload: {},
+    });
+    expect(invitationRes.statusCode).toBe(401);
+  });
+
 });
