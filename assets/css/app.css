@@ -62,7 +62,6 @@
 .login-view{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px;background:var(--r-bg)}
 .login-art{display:none}
 .login-card{align-self:center;justify-self:center;width:min(440px,100%);margin:0;padding:34px;border-color:var(--r-border);box-shadow:0 8px 28px #0B1F3F0A}
-.login-card:before{content:"راسخ";display:block;text-align:center;color:var(--r-navy);font-size:30px;font-weight:700;margin:0 0 16px}
 .login-card h2{color:var(--r-navy)}
 .login-card .btn.primary{background:var(--r-green)}
 .nav-item span svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -87,7 +86,7 @@
  .sidebar nav{width:auto;display:grid;grid-template-columns:1fr;gap:7px;padding-top:24px}
  .sidebar .nav-item{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;gap:13px;padding:13px 14px;font-size:14px;white-space:normal}
  .sidebar .nav-item span{width:26px;line-height:1.2}
- .mobile-bottom-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;inset:auto 0 0;z-index:12}
+ .mobile-bottom-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;inset:auto 0 0;z-index:12}
  .main-area{padding-bottom:94px}
  .content-area{padding-bottom:26px}
  .mobile-bottom-nav #mobileAdd span{background:transparent;color:var(--r-green);width:auto;height:auto;border-radius:0}
@@ -158,4 +157,24 @@
  .onboarding-heading h1{font-size:25px}
  .workspace-option{min-height:145px;padding:18px}
  .workspace-form{padding:19px}
+}
+
+/* Assigned circle chooser: only circles returned by the authenticated API are shown. */
+.assignment-select-view{min-height:100vh;padding:38px 18px;background:var(--r-bg)}
+.assignment-select-shell{max-width:860px;margin:0 auto}
+.assignment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.assignment-option{position:relative;background:#fff;border:1px solid var(--r-border);border-radius:16px;padding:20px 20px 20px 68px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:right;min-height:146px;transition:border-color .18s,transform .18s}
+.assignment-option:hover{border-color:var(--r-navy);transform:translateY(-2px)}
+.assignment-option strong{font-size:18px;color:var(--r-navy)}
+.assignment-option>span:not(.assignment-number){font-size:13px;color:var(--r-muted)}
+.assignment-option small{font-size:12px;color:var(--r-muted);line-height:1.6}
+.assignment-number{position:absolute;left:18px;top:19px;width:34px;height:34px;border-radius:11px;background:#edf1f7;color:var(--r-navy);font-weight:700;display:grid;place-items:center}
+.assigned-context{max-width:230px;color:var(--r-navy);font-size:12px;font-weight:600;line-height:1.5}
+#changeAssignedCircle{font-size:12px;padding:8px 10px}
+@media(max-width:720px){
+ .assignment-select-view{padding:24px 13px}
+ .assignment-grid{grid-template-columns:1fr}
+ .assignment-option{min-height:126px}
+ .assigned-context{max-width:132px;font-size:10px}
+ #changeAssignedCircle{font-size:10px;padding:7px 8px}
 }
