@@ -369,6 +369,15 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         },
       );
 
+      // Persist only the identifiers permitted by the declared scope shape.
+      // Real parent branch/premise identifiers are used above for authorization,
+      // but circle-scoped invitations must not store wider parent scope fields.
+      const storedScope = {
+        branchId: body.scopeType === "branch" ? body.branchId ?? null : null,
+        quranicPremiseId: body.scopeType === "quranic_premise" ? body.quranicPremiseId ?? null : null,
+        circleId: body.scopeType === "circle" ? body.circleId ?? null : null,
+      };
+
       const permissions =
         body.grantedPermissions ?? [...ROLE_DEFAULT_PERMISSIONS[body.roleCode]];
 
@@ -416,9 +425,9 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
             tokenHash,
             body.roleCode,
             body.scopeType,
-            body.branchId ?? null,
-            body.quranicPremiseId ?? null,
-            body.circleId ?? null,
+            storedScope.branchId,
+            storedScope.quranicPremiseId,
+            storedScope.circleId,
             body.targetStudentId ?? null,
             body.relationshipLabel ?? null,
             JSON.stringify(permissions),
