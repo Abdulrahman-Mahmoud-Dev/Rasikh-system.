@@ -1,7 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 
-import { env } from "../../config/env.js";
 import { withTransaction } from "../../db/transaction.js";
 import { getRequiredAuth, requireAuth } from "../../plugins/authentication.js";
 import {
@@ -10,7 +9,6 @@ import {
 } from "../../plugins/authorization.js";
 import {
   PERMISSIONS,
-  ROLE_CODES,
   ROLE_DEFAULT_PERMISSIONS,
   SCOPE_TYPES,
   type RoleCode,
@@ -32,6 +30,7 @@ import {
 } from "../../shared/utilities/crypto.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
 import { sendInvitationEmail } from "../auth/email.service.js";
+import { applyInvitationToPerson } from "./invitations.service.js";
 
 const associationParamsSchema = z.object({
   associationId: z.string().uuid(),
@@ -236,14 +235,6 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
           "INVITATION_EMAIL_REQUIRED",
         );
       }
-      if (!env.PUBLIC_APP_URL) {
-        throw new AppError(
-          503,
-          "PUBLIC_APP_URL_NOT_CONFIGURED",
-          "رابط موقع راسخ غير مضبوط في إعدادات الخادم، لذلك لم تُنشأ الدعوة.",
-        );
-      }
-
       const recipientEmail = body.recipientEmail.trim().toLowerCase();
 
       const normalizedPhone = body.recipientPhone
@@ -253,6 +244,16 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         throw new BadRequestError(
           "صيغة رقم جوال المدعو غير صحيحة (يجب أن يبدأ بـ 05).",
           "INVALID_SAUDI_PHONE",
+        );
+      }
+
+      if (
+        (body.roleCode === "teacher" || body.roleCode === "circle_assistant") &&
+        (body.scopeType !== "circle" || !body.circleId)
+      ) {
+        throw new BadRequestError(
+          "دعوة المعلم أو مساعد الحلقة يجب أن تكون مرتبطة بحلقة محددة.",
+          "CIRCLE_ASSIGNMENT_REQUIRED",
         );
       }
 
@@ -404,7 +405,6 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         await sendInvitationEmail({
           recipientEmail,
           recipientName: "مرحبًا بك",
-          invitationUrl: `${env.PUBLIC_APP_URL}/?invitation=${encodeURIComponent(rawToken)}`,
           organizationName: context.association_name,
           roleName: body.roleCode,
           scopeName: context.scope_name,
@@ -419,6 +419,64 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
         throw error;
       }
 
+      // If this email already belongs to an active account, attach the role
+      // immediately. Otherwise keep the invitation pending until the owner
+      // registers and confirms this same email address.
+      const existingAccount = await app.db.query<{
+        person_id: string;
+        account_status: string;
+      }>(
+        `SELECT p.id AS person_id, ua.status AS account_status
+         FROM public.persons p
+         INNER JOIN public.user_accounts ua ON ua.person_id = p.id
+         WHERE lower(btrim(p.email)) = $1
+           AND p.lifecycle_status = 'active'
+         LIMIT 1`,
+        [recipientEmail],
+      );
+
+      let membershipAssigned = false;
+      const existing = existingAccount.rows[0];
+      if (existing?.account_status === "active") {
+        membershipAssigned = await withTransaction(app.db, async (client) => {
+          const invitationResult = await client.query<{
+            id: string;
+            association_id: string;
+            invite_type: "staff_role" | "guardian_link";
+            recipient_email: string | null;
+            role_code: RoleCode;
+            scope_type: ScopeType;
+            branch_id: string | null;
+            quranic_premise_id: string | null;
+            circle_id: string | null;
+            target_student_id: string | null;
+            relationship_label: string | null;
+            granted_permissions: string[];
+            invited_by_person_id: string;
+            status: string;
+            expires_at: Date | string;
+          }>(
+            `SELECT id, association_id, invite_type, recipient_email, role_code,
+                    scope_type, branch_id, quranic_premise_id, circle_id,
+                    target_student_id, relationship_label, granted_permissions,
+                    invited_by_person_id, status, expires_at
+             FROM public.invitations
+             WHERE id = $1
+             FOR UPDATE`,
+            [invitationId],
+          );
+          const invitation = invitationResult.rows[0];
+          if (!invitation) return false;
+          const result = await applyInvitationToPerson(
+            client,
+            invitation,
+            existing.person_id,
+            recipientEmail,
+          );
+          return Boolean(result);
+        });
+      }
+
       return reply.status(201).send({
         invitation: {
           id: invitationId,
@@ -427,6 +485,7 @@ const peopleRoutes: FastifyPluginAsync = async (app) => {
           roleCode: body.roleCode,
           expiresAt: expiresAt.toISOString(),
           delivery: "accepted_by_email_provider",
+          membershipAssigned,
         },
       });
     },
