@@ -40,8 +40,8 @@ function deriveKey(
 }
 
 export function validateNewPassword(password: string): void {
-  if (password.length < 12 || password.length > 128) {
-    throw new Error("PASSWORD_POLICY: يجب أن تتكون كلمة المرور من 12 إلى 128 حرفًا.");
+  if (password.length < 6 || password.length > 128) {
+    throw new Error("PASSWORD_POLICY: يجب أن تتكون كلمة المرور من 6 إلى 128 أحرف.");
   }
 }
 
