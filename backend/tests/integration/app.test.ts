@@ -413,8 +413,10 @@ describe("Fastify Backend HTTP Integration", () => {
       url: "/api/v1/auth/google/nonce",
       payload: {},
     });
-    expect(googleNonceRes.statusCode).toBe(200);
-    expect(googleNonceRes.json().nonce).toBeTypeOf("string");
+    // The route is mounted, but it must fail closed until the real Google
+    // Web Client ID is configured in the backend environment.
+    expect(googleNonceRes.statusCode).toBe(503);
+    expect(googleNonceRes.json().error.code).toBe("GOOGLE_SIGN_IN_NOT_CONFIGURED");
 
     const onboardingRes = await app.inject({
       method: "GET",
