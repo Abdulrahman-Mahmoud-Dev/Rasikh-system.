@@ -115,10 +115,12 @@ const authRoutes: FastifyPluginAsync = async (app) => {
            max_attempts,
            expires_at
          )
-         VALUES ($1, 'email', $2, 'email', $3, $4, $5)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           challengeId,
+          "email",
           normalizedIdentifier,
+          "email",
           otpHash,
           OTP_MAX_ATTEMPTS,
           expiresAt.toISOString(),
