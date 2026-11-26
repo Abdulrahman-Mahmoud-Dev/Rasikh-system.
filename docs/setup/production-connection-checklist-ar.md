@@ -90,7 +90,7 @@ npm run db:migrate:built
 
 لا تضع في هذا الملف كلمة مرور، أو `DATABASE_URL`، أو `COOKIE_SECRET`، أو `EMAILJS_PRIVATE_KEY`، أو Google Client Secret.
 
-بعد حفظ التعديل ودمجه في `main)، يعيد GitHub Pages نشر الواجهة. لا تضع عنوانًا تخمينيًا؛ انتظر حتى تحصل على عنوان Backend حقيقي.
+بعد حفظ التعديل ودمجه في `main`، يعيد GitHub Pages نشر الواجهة. لا تضع عنوانًا تخمينيًا؛ انتظر حتى تحصل على عنوان Backend حقيقي.
 
 ## 5. إعداد تسجيل Google
 
