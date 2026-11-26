@@ -72,3 +72,12 @@ export class TooManyRequestsError extends AppError {
     super(429, code, message);
   }
 }
+
+export class ServiceUnavailableError extends AppError {
+  constructor(
+    message: string = "الخدمة غير متاحة حاليًا. يرجى المحاولة لاحقًا.",
+    code: string = "SERVICE_UNAVAILABLE",
+  ) {
+    super(503, code, message);
+  }
+}
