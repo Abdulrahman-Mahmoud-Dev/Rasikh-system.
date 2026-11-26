@@ -19,7 +19,10 @@ function hasPermission(permission){return state.permissions.includes(permission)
 function hasAnyPermission(items){return items.some(hasPermission)}
 function roleSet(){return new Set(state.roles)}
 function refreshPermissions(){
- const current=state.assignments.filter(a=>a.association_id===state.associationId);
+ let current=state.assignments.filter(a=>a.association_id===state.associationId);
+ if(state.circleOnlyMode&&state.activeCircleId){
+  current=current.filter(a=>a.scope_type==="circle"&&a.circle_id===state.activeCircleId);
+ }
  state.roles=[...new Set(current.map(a=>a.role_code))];
  state.permissions=[...new Set(current.flatMap(a=>Array.isArray(a.granted_permissions)?a.granted_permissions:[]))];
 }
