@@ -300,7 +300,12 @@ function openInvitationDialog(){
 }
 async function addStudent(){const circles=[...new Map(state.hierarchy.filter(x=>x.circle_id).map(x=>[x.circle_id,{id:x.circle_id,name:x.circle_name}])).values()];openModal("إضافة طالب",'<form id="newStudentForm"><label>اسم الطالب</label><input name="fullName" required minlength="3"><label>رقم الجوال</label><input name="phone" required placeholder="05xxxxxxxx" inputmode="tel"><label>البريد الإلكتروني</label><input name="email" type="email" required><label>الحلقة</label><select name="circleId" required>'+circles.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("")+'</select><label>الأجزاء المحفوظة سابقًا</label><input name="previousMemorizedJuz" type="number" min="0" max="30" value="0"><button class="btn primary" type="submit">إضافة الطالب</button></form>');$("#newStudentForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.currentTarget));b.previousMemorizedJuz=Number(b.previousMemorizedJuz);await api("/associations/"+state.associationId+"/students",{method:"POST",body:JSON.stringify(b)});closeModal();await loadStudents();renderHome();toast("تم تسجيل الطالب.")}}
 async function createCircle(e){e.preventDefault();const b={quranicPremiseId:$("#circlePremise").value,name:$("#circleName").value.trim(),studyPeriod:$("#circlePeriod").value,targetStage:$("#circleStage").value.trim()||undefined};await api("/associations/"+state.associationId+"/circles",{method:"POST",body:JSON.stringify(b)});e.target.reset();await loadHierarchy();toast("تم إنشاء الحلقة.")}
-async function checkApi(){const r=await fetch(API+"/health/ready",{credentials:"include"});const d=await r.json();$("#apiStatus").textContent=r.ok?"الخادم وقاعدة البيانات متصلان.":"الخادم غير جاهز: "+(d.database||r.status)}
+async function checkApi(){
+ if(!API){$("#apiStatus").textContent="عنوان API_BASE_URL غير مضبوط. انشر Backend ثم ضع رابطه في assets/js/rasikh-config.js.";return;}
+ const r=await fetch(API+"/health/ready",{credentials:"include"});
+ const d=await r.json();
+ $("#apiStatus").textContent=r.ok?"الخادم وقاعدة البيانات متصلان.":"الخادم غير جاهز: "+(d.database||r.status);
+}
 async function showOnboarding(){
  $("#loginView").classList.add("hidden");$("#assignmentSelectView").classList.add("hidden");$("#appView").classList.add("hidden");$("#onboardingView").classList.remove("hidden");
  try{
@@ -333,7 +338,14 @@ async function initializeGoogle(){
    window.google.accounts.id.renderButton(slot,{type:"standard",theme:"outline",size:"large",text:"continue_with",shape:"rectangular",logo_alignment:"left",width:360,locale:"ar"});
    note.classList.add("hidden");
   };
-  if(window.google?.accounts?.id)ready();else window.addEventListener("load",ready,{once:true});
+  if(window.google?.accounts?.id)ready();
+  else{
+   const googleScript=document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+   if(googleScript){
+    googleScript.addEventListener("load",ready,{once:true});
+    googleScript.addEventListener("error",()=>{note.classList.remove("hidden");note.textContent="تعذر تحميل خدمة Google. تحقق من الاتصال ثم أعد المحاولة.";},{once:true});
+   }else{note.classList.remove("hidden");note.textContent="مكتبة تسجيل Google غير موجودة في الصفحة.";}
+  }
  }catch(e){note.classList.remove("hidden");note.textContent=e.message;}
 }
 async function beginAuthFromUrl(){
