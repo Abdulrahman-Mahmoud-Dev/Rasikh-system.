@@ -1,0 +1,58 @@
+name: rasikh-local
+
+x-backend-environment: &backend-environment
+  NODE_ENV: development
+  HOST: 0.0.0.0
+  PORT: 3000
+  DATABASE_URL: postgresql://${POSTGRES_USER:-rasikh_app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rasikh_dev}
+  COOKIE_SECRET: ${COOKIE_SECRET:?Set COOKIE_SECRET in .env}
+  COOKIE_SECURE: "false"
+  COOKIE_SAME_SITE: lax
+  CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5500}
+  PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:5500}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  LOG_LEVEL: info
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rasikh_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-rasikh_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - rasikh-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rasikh_app} -d ${POSTGRES_DB:-rasikh_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment: *backend-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  backend-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment: *backend-environment
+    command: ["node", "dist/db/migrate.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+    restart: "no"
+
+volumes:
+  rasikh-postgres-data:

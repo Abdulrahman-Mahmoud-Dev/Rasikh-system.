@@ -394,12 +394,30 @@ describe("Fastify Backend HTTP Integration", () => {
   });
 
   it("registers password, Google, onboarding, and invitation API routes", async () => {
-    const passwordLoginRes = await app.inject({
+    const malformedPasswordLoginRes = await app.inject({
       method: "POST",
       url: "/api/v1/auth/password/login",
-      payload: { email: "not-an-email", password: "short" },
+      payload: { email: "not-an-email", password: "secret6" },
     });
-    expect(passwordLoginRes.statusCode).toBe(400);
+    expect(malformedPasswordLoginRes.statusCode).toBe(400);
+
+    const tooShortPasswordLoginRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/login",
+      payload: { email: "not-found@rasikh.example", password: "12345" },
+    });
+    expect(tooShortPasswordLoginRes.statusCode).toBe(400);
+
+    const missingAccountLoginRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password/login",
+      payload: { email: "not-found@rasikh.example", password: "secret6" },
+    });
+    expect(missingAccountLoginRes.statusCode).toBe(401);
+    expect(missingAccountLoginRes.json().error).toMatchObject({
+      code: "ACCOUNT_NOT_FOUND",
+      message: expect.stringContaining("لا يوجد حساب مسجل بهذا البريد الإلكتروني"),
+    });
 
     const registrationRes = await app.inject({
       method: "POST",

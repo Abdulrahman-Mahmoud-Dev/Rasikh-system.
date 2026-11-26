@@ -184,3 +184,12 @@
 .invite-form label{font-size:14px;font-weight:600;color:var(--r-text);margin-top:6px}
 .invite-form input,.invite-form select{width:100%;min-height:46px;border:1px solid var(--r-border);border-radius:10px;padding:10px 12px;background:#fff;font:inherit}
 .invite-form input:focus,.invite-form select:focus{outline:2px solid #2f6fb326;border-color:#2f6fb3}
+
+
+/* Accessible password visibility control; keeps the existing authentication layout. */
+.auth-card .password-field{position:relative;width:100%}
+.auth-card .password-field input{width:100%;padding-left:50px}
+.auth-card .password-toggle{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--r-muted);cursor:pointer}
+.auth-card .password-toggle:hover{background:#f3f5f7;color:var(--r-navy)}
+.auth-card .password-toggle:focus-visible{outline:2px solid var(--r-navy);outline-offset:2px}
+.auth-card .password-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
