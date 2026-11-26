@@ -108,7 +108,11 @@
 .google-auth-block{margin:8px 0 2px}
 .google-button-slot{min-height:44px;display:flex;justify-content:center;width:100%}
 .google-button-slot>div{max-width:100%}
-.setup-note{font-size:12px;color:#9b5c22;background:#fff8e9;border:1px solid #f1d8a8;border-radius:10px;padding:9px 12px;line-height:1.7}
+.google-preview-button{width:100%;min-height:58px;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 16px;border:1px solid #dadce0;border-radius:12px;background:#fff;color:#202124;font:inherit;font-size:16px;font-weight:600;box-shadow:0 1px 2px rgba(60,64,67,.12);cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.google-preview-button:hover{background:#f8faff;border-color:#c8d2e0}
+.google-preview-button:focus-visible{outline:2px solid var(--r-navy);outline-offset:2px}
+.google-preview-button svg{width:23px;height:23px;flex:none}
+.google-status-note{margin:7px 2px 0;text-align:center;color:var(--r-muted);font-size:12px;line-height:1.7}
 .auth-divider{display:flex;align-items:center;gap:12px;color:var(--r-muted);font-size:12px;margin:4px 0}
 .auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--r-border);flex:1}
 .auth-tabs{display:flex;gap:7px;padding:4px;background:#f2f4f7;border-radius:12px;margin:4px 0}
