@@ -102,7 +102,7 @@
 .auth-brand{display:flex;align-items:center;gap:13px;margin-bottom:8px;min-width:0}
 .auth-brand-emblem{display:block;width:78px;height:78px;flex:none;object-fit:contain;border-radius:50%}
 .auth-brand-copy{min-width:0}
-.auth-brand h2{margin:0;color:var(--r-navy);font-family:"Aref Ruqaa","IBM Plex Sans Arabic",serif;font-size:31px;font-weight:700;line-height:1.35;white-space:nowrap}
+.auth-brand h2{margin:0;color:var(--r-navy);font-family:inherit;font-size:29px;font-weight:700;line-height:1.35;white-space:nowrap}
 .auth-brand p{margin:2px 0 0;color:#B88A35;font-size:12px;font-weight:600;line-height:1.8}
 .brand-square,.workspace-icon{width:54px;height:54px;display:grid;place-items:center;flex:none;border:1.6px solid var(--r-navy);border-radius:15px;background:#fff;color:var(--r-navy)}
 .brand-letter{font-size:31px;font-weight:700;color:var(--r-navy)}
@@ -200,3 +200,24 @@
 .auth-card .password-toggle:hover{background:#f3f5f7;color:var(--r-navy)}
 .auth-card .password-toggle:focus-visible{outline:2px solid var(--r-navy);outline-offset:2px}
 .auth-card .password-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* Desktop login sizing: give the authentication card a comfortable, readable presence. */
+@media(min-width:1001px){
+ .login-view{grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr)}
+ .auth-card{width:min(700px,94%);max-width:700px;padding:44px 50px;gap:13px}
+ .auth-brand{gap:16px;margin-bottom:12px}
+ .auth-brand-emblem{width:88px;height:88px}
+ .auth-brand h2{font-size:32px}
+ .auth-brand p{font-size:14px;line-height:1.9}
+ .auth-card>h2{font-size:32px}
+ .auth-card #authDescription{font-size:17px}
+ .google-preview-button{min-height:64px;font-size:18px}
+ .auth-divider{font-size:14px;margin:8px 0}
+ .auth-tabs button{padding:13px;font-size:16px}
+ .auth-form label{font-size:15px}
+ .auth-form input{min-height:56px;font-size:16px}
+ .auth-form .btn.full{min-height:58px;font-size:18px}
+ .text-link{font-size:16px}
+ .secure-note{font-size:12px}
+}
