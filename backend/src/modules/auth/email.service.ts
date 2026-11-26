@@ -79,7 +79,6 @@ async function sendEmailTemplate(
 export interface InvitationEmail {
   recipientEmail: string;
   recipientName: string;
-  invitationUrl: string;
   organizationName: string;
   roleName: string;
   scopeName: string;
@@ -103,14 +102,13 @@ export async function sendInvitationEmail(
       to_name: invitation.recipientName,
       subject: "دعوة للانضمام إلى نظام راسخ",
       email_title: "لديك دعوة للانضمام إلى نظام راسخ",
-      message: "تمت دعوتك للانضمام إلى جهة في نظام راسخ. راجع تفاصيل الدعوة ثم أكمل التسجيل.",
-      invitation_url: invitation.invitationUrl,
+      message: "تمت إضافتك إلى جهة في نظام راسخ. إذا كان لديك حساب، سجّل الدخول بالبريد نفسه لتظهر لك صلاحياتك. وإذا لم يكن لديك حساب، أنشئ حسابًا بالبريد نفسه؛ وبعد تأكيد ملكية البريد ستُفعّل عضويتك تلقائيًا دون رابط قبول دعوة.",
       organization_name: invitation.organizationName,
       role_name: invitation.roleName,
       scope_name: invitation.scopeName,
       inviter_name: invitation.inviterName,
       expires_at: expiresAt,
-      action_label: "قبول الدعوة",
+      action_label: "عرض نظام راسخ",
     },
   );
 }
