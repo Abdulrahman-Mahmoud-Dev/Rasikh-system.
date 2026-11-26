@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B1F3F"><title>نظام راسخ</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/app.css">
@@ -10,13 +11,148 @@
 <div id="toast" class="toast" role="status"></div>
 <section id="loginView" class="login-view">
  <div class="login-art"><div class="brand-mark"><img src="1794918114340.jpg" alt="شعار نظام راسخ"></div><p class="eyebrow">إدارة جمعيات وحلقات تحفيظ القرآن الكريم</p><h1>نظام راسخ</h1><p>إدارة تعليمية وإدارية مترابطة، تحفظ العمل وتيسّر المتابعة.</p></div>
- <form id="loginForm" class="login-card">
-  <span class="eyebrow">مرحبًا بعودتك</span><h2>تسجيل الدخول</h2><p class="muted">أدخل بريدك الإلكتروني المسجّل في نظام راسخ لإرسال رمز الدخول.</p>
-  <label for="identifier">البريد الإلكتروني</label><input id="identifier" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="name@example.com" required>
-  <button class="btn primary full" type="submit">طلب رمز التحقق</button>
-  <div id="otpArea" class="otp-area hidden"><label for="otpCode">رمز التحقق المكوّن من ٦ أرقام</label><input id="otpCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"><button class="btn primary full" id="verifyBtn" type="button">تأكيد الدخول</button></div>
-  <p class="hint">رمز الدخول يُرسل إلى بريدك الإلكتروني المسجّل فقط، وصلاحيته ٥ دقائق.</p><p id="loginMessage" class="form-message"></p>
- </form>
+ <div class="login-card auth-card" id="authCard">
+  <div class="auth-brand"><span class="brand-square"><span class="brand-letter">ر</span></span><div><h2>نظام راسخ</h2><p class="muted">إدارة جمعيات وحلقات تحفيظ القرآن الكريم</p></div></div>
+  <span class="eyebrow">مرحبًا بعودتك</span>
+  <h2 id="authTitle">تسجيل الدخول</h2>
+  <p class="muted" id="authDescription">ادخل إلى حسابك لمتابعة أعمالك وحلقاتك.</p>
+
+  <div class="google-auth-block">
+    <div id="googleButton" class="google-button-slot"></div>
+    <p id="googleSetupNote" class="setup-note hidden">تسجيل Google يحتاج إلى إعداد Client ID وربط عنوان الخادم.</p>
+  </div>
+
+  <div class="auth-divider"><span>أو باستخدام البريد الإلكتروني</span></div>
+
+  <div class="auth-tabs" role="tablist" aria-label="نوع الحساب">
+    <button type="button" id="tabLogin" class="active" data-auth-mode="login">تسجيل الدخول</button>
+    <button type="button" id="tabRegister" data-auth-mode="register">إنشاء حساب جديد</button>
+  </div>
+
+  <form id="passwordLoginForm" class="auth-form">
+    <label for="loginEmail">البريد الإلكتروني</label>
+    <input id="loginEmail" type="email" inputmode="email" autocomplete="username" placeholder="name@example.com" required>
+    <label for="loginPassword">كلمة المرور</label>
+    <input id="loginPassword" type="password" autocomplete="current-password" minlength="12" placeholder="أدخل كلمة المرور" required>
+    <button class="btn primary full" type="submit">تسجيل الدخول</button>
+    <button type="button" id="forgotPasswordBtn" class="text-link">نسيت كلمة المرور؟</button>
+  </form>
+
+  <form id="registerForm" class="auth-form hidden">
+    <label for="registerFullName">الاسم الكامل</label>
+    <input id="registerFullName" type="text" autocomplete="name" minlength="3" maxlength="200" placeholder="أدخل اسمك الكامل" required>
+    <label for="registerEmail">البريد الإلكتروني</label>
+    <input id="registerEmail" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required>
+    <label for="registerPassword">كلمة المرور</label>
+    <input id="registerPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="١٢ حرفًا على الأقل" required>
+    <p class="field-hint">لا نطلب رقم الجوال لإنشاء حسابك. يمكنك إضافته لاحقًا من ملفك الشخصي.</p>
+    <button class="btn primary full" type="submit">إنشاء الحساب</button>
+  </form>
+
+  <form id="invitationRegisterForm" class="auth-form hidden">
+    <div class="invitation-summary" id="invitationSummary"></div>
+    <label for="invitationEmail">البريد الذي وصلت إليه الدعوة</label>
+    <input id="invitationEmail" type="email" readonly>
+    <label for="invitationFullName">الاسم الكامل</label>
+    <input id="invitationFullName" type="text" minlength="3" maxlength="200" autocomplete="name" required>
+    <label for="invitationPassword">كلمة المرور</label>
+    <input id="invitationPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+    <p class="field-hint">سيُسند إليك الدور والصلاحيات المحددة في الدعوة. لا يمكن تغيير البريد أو المنصب من هذه الصفحة.</p>
+    <button class="btn primary full" type="submit">إنشاء الحساب وقبول الدعوة</button>
+    <button type="button" id="existingInviteAccount" class="text-link">لدي حساب بهذا البريد، تسجيل الدخول</button>
+  </form>
+
+  <form id="resetRequestForm" class="auth-form hidden">
+    <p class="muted">أدخل بريدك المسجل، وسنرسل رابطًا آمنًا لاستعادة كلمة المرور.</p>
+    <label for="resetEmail">البريد الإلكتروني</label>
+    <input id="resetEmail" type="email" autocomplete="email" required>
+    <button class="btn primary full" type="submit">إرسال رابط الاستعادة</button>
+    <button type="button" class="text-link" data-return-login>العودة لتسجيل الدخول</button>
+  </form>
+
+  <form id="resetConfirmForm" class="auth-form hidden">
+    <label for="newPassword">كلمة المرور الجديدة</label>
+    <input id="newPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+    <button class="btn primary full" type="submit">حفظ كلمة المرور</button>
+  </form>
+
+  <p id="authMessage" class="form-message" role="status" aria-live="polite"></p>
+  <p class="secure-note"><span aria-hidden="true">◆</span> حماية الحسابات تتم من خلال الخادم وجلسات آمنة.</p>
+</div>
+</section>
+<section id="onboardingView" class="onboarding-view hidden">
+  <div class="onboarding-shell">
+    <div class="onboarding-heading">
+      <span class="eyebrow">خطوتك الأولى</span>
+      <h1>مرحبًا بك في نظام راسخ</h1>
+      <p class="muted">اختر نوع الجهة أو ابدأ ببيئة تجريبية للتعرّف على النظام.</p>
+    </div>
+    <div id="pendingRegistration" class="pending-registration hidden"></div>
+    <div class="workspace-options" id="workspaceOptions">
+      <button type="button" class="workspace-option" data-workspace="association">
+        <span class="workspace-icon navy"><span>▥</span></span>
+        <strong>جمعية تحفيظ القرآن الكريم</strong>
+        <small>تقديم بيانات الترخيص والجهة المرخِّصة لبدء التحقق.</small>
+      </button>
+      <button type="button" class="workspace-option" data-workspace="independent_mosque">
+        <span class="workspace-icon navy"><span>⌂</span></span>
+        <strong>مسجد مستقل</strong>
+        <small>إدارة مستقلة تبدأ بمسجد وحلقة ومشرف.</small>
+      </button>
+      <button type="button" class="workspace-option" data-workspace="independent_quranic_center">
+        <span class="workspace-icon navy"><span>▣</span></span>
+        <strong>مقر قرآني مستقل</strong>
+        <small>إنشاء مقر مستقل وحلقاته وإدارة مسؤولياته.</small>
+      </button>
+      <button type="button" class="workspace-option" data-workspace="demo">
+        <span class="workspace-icon navy"><span>✦</span></span>
+        <strong>تجربة حلقة ترحيبية</strong>
+        <small>بيانات وهمية جاهزة للتعلم دون التأثير على بياناتك الحقيقية.</small>
+      </button>
+    </div>
+    <div id="associationSetup" class="workspace-form hidden">
+      <button type="button" class="text-link" data-back-workspaces>← العودة للخيارات</button>
+      <h2>تسجيل جمعية</h2>
+      <p class="muted">سيبقى الطلب قيد التحقق حتى تتأكد الجهة المختصة من بيانات الترخيص.</p>
+      <form id="associationSetupForm">
+        <label for="associationName">اسم الجمعية</label>
+        <input id="associationName" required minlength="3" maxlength="200">
+        <label for="associationLicense">رقم الترخيص</label>
+        <input id="associationLicense" required minlength="2" maxlength="100">
+        <label for="licensingAuthority">الجهة المرخِّصة</label>
+        <input id="licensingAuthority" required minlength="2" maxlength="200">
+        <button class="btn primary full" type="submit">إرسال طلب التحقق</button>
+      </form>
+    </div>
+    <div id="independentSetup" class="workspace-form hidden">
+      <button type="button" class="text-link" data-back-workspaces>← العودة للخيارات</button>
+      <h2 id="independentTitle">إنشاء جهة مستقلة</h2>
+      <form id="independentSetupForm">
+        <input id="independentKind" type="hidden">
+        <label for="independentName">اسم المسجد أو المقر</label>
+        <input id="independentName" required minlength="2" maxlength="200">
+        <label for="independentCity">المدينة</label>
+        <input id="independentCity" required value="جدة">
+        <label for="independentDistrict">الحي</label>
+        <input id="independentDistrict" required>
+        <label for="independentRegion">المنطقة الإدارية (اختياري)</label>
+        <input id="independentRegion">
+        <label for="independentCircleName">اسم الحلقة الأولى</label>
+        <input id="independentCircleName" required minlength="2" maxlength="200">
+        <label for="independentStudyPeriod">وقت الحلقة</label>
+        <select id="independentStudyPeriod">
+          <option value="after_fajr">بعد الفجر</option>
+          <option value="after_dhuhr">بعد الظهر</option>
+          <option value="after_asr">بعد العصر</option>
+          <option value="after_maghrib">بعد المغرب</option>
+          <option value="after_isha">بعد العشاء</option>
+        </select>
+        <p class="field-hint">ستكون مشرف الجهة، ويمكنك دعوة المعلم والمساعد وتحديد صلاحياتهما.</p>
+        <button class="btn primary full" type="submit">إنشاء الجهة والحلقة</button>
+      </form>
+    </div>
+    <p id="onboardingMessage" class="form-message" role="status"></p>
+  </div>
 </section>
 <div id="appView" class="app-view hidden">
  <aside class="sidebar">
